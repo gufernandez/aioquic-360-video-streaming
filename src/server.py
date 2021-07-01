@@ -1,4 +1,6 @@
 import asyncio
+from aioquic.asyncio import serve
+from aioquic.quic.configuration import QuicConfiguration
 
 list_of_users = []
 
@@ -26,11 +28,21 @@ def msg(message):
         user.write(message.encode())
 
 
+def handle_stream(reader, writer):
+    asyncio.ensure_future(handle_echo(reader, writer))
+
 async def main():
-    server = await asyncio.start_server(
-        handle_echo, '127.0.0.1', 8888)
-    addr = server.sockets[0].getsockname()
-    print(f'Serving on {addr}')
+    configuration = QuicConfiguration(
+        is_client=False,
+        max_datagram_frame_size=65536
+    )
+
+    configuration.load_cert_chain('../cert/ssl_cert.pem', '../cert/ssl_key.pem')
+
+    await serve('127.0.0.1',
+                8888,
+                configuration=configuration,
+                stream_handler=handle_stream,)
 
 
 asyncio.ensure_future(main())
