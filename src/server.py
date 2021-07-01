@@ -1,32 +1,28 @@
 import asyncio
 from aioquic.asyncio import serve
 from aioquic.quic.configuration import QuicConfiguration
-
-list_of_users = []
+from priority_queue import StrictPriorityQueue
 
 async def handle_echo(reader, writer):
+    queue = asyncio.Queue()
     name = await reader.read(1024)
     name.decode()
     print(name)
 
-    addr = writer
-    list_of_users.append(addr)
-
+    asyncio.ensure_future(receive(reader, queue))
     while True:
-        data = await reader.read(1024)
-        message = data.decode()
-        print(message)
-        if not message:
-            list_of_users.remove(addr)
-            break
-        msg(message)
+        message = await queue.get()
+        send(message, writer)
 
+async def receive(reader, queue):
+    while True:
+        input_message = await reader.read(1024)
+        print('Appending: '+str(input_message))
+        queue.put_nowait(input_message)
 
-def msg(message):
-    for user in list_of_users:
-        print('send message - ', message)
-        user.write(message.encode())
-
+def send(message, writer):
+    print('send message - ', message)
+    writer.write(message)
 
 def handle_stream(reader, writer):
     asyncio.ensure_future(handle_echo(reader, writer))

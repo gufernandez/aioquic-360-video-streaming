@@ -1,4 +1,6 @@
 import asyncio
+import csv
+
 from aioconsole import ainput
 from aioquic.asyncio import QuicConnectionProtocol
 from aioquic.asyncio.client import connect
@@ -16,13 +18,16 @@ async def handle_stream(reader, writer):
     # User input
     asyncio.ensure_future(receive(reader))
     # Server data received
-    while True:
-        await send(writer)
-
-async def send(writer):
-    message = await ainput()
-    writer.write(message.encode())
-
+    with open('../data/example.csv') as csv_file:
+        csv_reader = csv.reader(csv_file, delimiter=',')
+        line_count = 0
+        for row in csv_reader:
+            if line_count > 0:
+                message = ''.join(row)
+                print("Sending: " + message)
+                writer.write(message.encode())
+                await asyncio.sleep(1)
+            line_count += 1
 
 async def receive(reader):
     while True:
