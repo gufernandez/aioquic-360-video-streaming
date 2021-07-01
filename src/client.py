@@ -22,9 +22,9 @@ async def handle_stream(reader, writer):
     writer.write(CLIENT_ID.encode())
     await asyncio.sleep(1)
     with open('../data/priority_example.csv') as csv_file:
-        csv_reader = csv.reader(csv_file, delimiter=',')
+        csv_reader = csv.reader(csv_file, delimiter=';')
         for row in csv_reader:
-            message = ''.join(row)
+            message = ';'.join(row)
             print("Sending: " + message)
             writer.write(message.encode())
             await asyncio.sleep(1)

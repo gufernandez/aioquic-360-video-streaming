@@ -20,7 +20,7 @@ with open('example.csv') as csv_file:
         line_count += 1
 
     with open('priority_example.csv', 'w') as f:
-        writer = csv.writer(f)
+        writer = csv.writer(f, delimiter=';')
 
         # write multiple rows
         writer.writerows(new_csv)

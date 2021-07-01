@@ -4,25 +4,32 @@ from aioquic.quic.configuration import QuicConfiguration
 from priority_queue import StrictPriorityQueue
 
 async def handle_echo(reader, writer):
-    queue = asyncio.Queue()
+    queue = StrictPriorityQueue()
     name = await reader.read(1024)
     name.decode()
     print(name)
 
     asyncio.ensure_future(receive(reader, queue))
     while True:
-        message = await queue.get()
-        send(message, writer)
+        tile = await queue.get()
+        send(str(tile), writer)
 
 async def receive(reader, queue):
     while True:
         input_message = await reader.read(1024)
-        print('Appending: '+str(input_message))
-        queue.put_nowait(input_message)
+        print('Appending: '+str(input_message.decode()))
+        data = str(input_message.decode()).split(';')
+        first = True
+        for item in data:
+            if first:
+                first = False
+            else:
+                tile = eval(item[1:-1])
+                queue.put_nowait(tile)
 
 def send(message, writer):
     print('send message - ', message)
-    writer.write(message)
+    writer.write(message.encode())
 
 def handle_stream(reader, writer):
     asyncio.ensure_future(handle_echo(reader, writer))
