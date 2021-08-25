@@ -16,7 +16,7 @@ FILE_FORMAT = '.m4s'
 DASH = '10000'
 MAX_TILE = 201
 FPS = 30
-FRAME_TIME_MS = 33.33
+FRAME_TIME_MS = 33333
 
 async def aioquic_client():
     configuration = QuicConfiguration(is_client=True)
@@ -27,7 +27,6 @@ async def aioquic_client():
         await handle_stream(reader, writer)
 
 async def handle_stream(reader, writer):
-    global received_files
     received_files = 0
     # User input
     asyncio.ensure_future(receive(reader))
@@ -62,7 +61,6 @@ async def handle_stream(reader, writer):
                 video_segment += 1
 
                 if video_segment > 10:
-                    print("END")
                     break
 
                 # Tiles in user FOV
@@ -104,7 +102,6 @@ async def handle_stream(reader, writer):
                     delta = time_now - frame_time
 
                     if delta.microseconds > FRAME_TIME_MS:
-                        print(frame)
                         waiting_for_time = False
 
                 # Check for missing segments
@@ -124,7 +121,6 @@ def is_segment_missed(tile, segment):
     return not os.path.isfile(FILE_BASE_NAME + str(tile) + '_' + str(segment) + FILE_FORMAT)
 
 async def receive(reader):
-    global received_files
     while True:
         size, = struct.unpack('<L', await reader.readexactly(4))
         file_name_data = await reader.readexactly(size)
@@ -142,8 +138,6 @@ async def receive(reader):
                 else:
                     chunk = await reader.read(file_size)
                     newFile.write(binascii.hexlify(chunk))
-
-        received_files += 1
 
 
 async def main():
