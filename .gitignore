@@ -130,3 +130,6 @@ dmypy.json
 
 .idea
 reference/
+logs/
+data/segments/
+data/client_files/
