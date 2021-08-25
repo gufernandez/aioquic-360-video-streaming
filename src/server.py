@@ -1,13 +1,22 @@
 import asyncio
+import struct
+import time
 from aioquic.asyncio import serve
 from aioquic.quic.configuration import QuicConfiguration
 from priority_queue import StrictPriorityQueue
+
+CLIENT_ID = '1'
+FILE_BASE_NAME = '../data/segments/video_tiled_dash_track'
+FILE_FORMAT = '.m4s'
+DASH = '10000'
+MAX_TILE = 201
+FPS = 30
+FRAME_TIME_MS = 33.33
 
 async def handle_echo(reader, writer):
     queue = StrictPriorityQueue()
     name = await reader.read(1024)
     name.decode()
-    print(name)
 
     asyncio.ensure_future(receive(reader, queue))
     while True:
@@ -16,20 +25,39 @@ async def handle_echo(reader, writer):
 
 async def receive(reader, queue):
     while True:
-        input_message = await reader.read(1024)
-        print('Appending: '+str(input_message.decode()))
-        data = str(input_message.decode()).split(';')
-        first = True
-        for item in data:
-            if first:
-                first = False
-            else:
-                tile = eval(item[1:-1])
-                queue.put_nowait(tile)
+        size, = struct.unpack('<L', await reader.readexactly(4))
+        message_data = await reader.readexactly(size)
+
+        message = eval(message_data.decode())
+        queue.put_nowait((int(message[1]), (message[0], message[2])))
 
 def send(message, writer):
-    print('send message - ', message)
-    writer.write(message.encode())
+    info = eval(message[1:-1])
+    segment = str(info[0])
+    tile = str(info[1])
+
+    file_info = tile+'_'+segment
+    data = file_info.encode()
+
+    writer.write(struct.pack('<L', len(data)))
+    writer.write(data)
+
+    file_name = FILE_BASE_NAME+file_info+FILE_FORMAT
+    print("Sending file for tile " + tile + " and segment " + segment)
+
+    with open(file_name, "rb") as binaryfile:
+        not_finished = True
+        while not_finished:
+            chunk = binaryfile.read(4096)
+            if not chunk:
+                writer.write(struct.pack('<L', 0))
+                not_finished = False
+            else:
+                writer.write(struct.pack('<L', 4096))
+                writer.write(chunk)
+
+    # If first time send mp4
+    # If not, just the m4s
 
 def handle_stream(reader, writer):
     asyncio.ensure_future(handle_echo(reader, writer))
