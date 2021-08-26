@@ -1,10 +1,12 @@
 import asyncio
 import struct
-import time
+from asyncio import Queue
+
 from aioquic.asyncio import serve
 from aioquic.quic.configuration import QuicConfiguration
-from priority_queue import StrictPriorityQueue
+from queues import StrictPriorityQueue
 
+QUEUE_MODE = 'SP'
 CLIENT_ID = '1'
 FILE_BASE_NAME = '../data/segments/video_tiled_dash_track'
 FILE_FORMAT = '.m4s'
@@ -21,7 +23,7 @@ async def handle_echo(reader, writer):
     asyncio.ensure_future(receive(reader, queue))
     while True:
         tile = await queue.get()
-        send(str(tile), writer)
+        await send(str(tile), writer)
 
 async def receive(reader, queue):
     while True:
@@ -29,9 +31,12 @@ async def receive(reader, queue):
         message_data = await reader.readexactly(size)
 
         message = eval(message_data.decode())
-        queue.put_nowait((int(message[1]), (message[0], message[2])))
+        if QUEUE_MODE == "SP":
+            queue.put_nowait((int(message[1]), (message[0], message[2])))
+        else:
+            queue.put_nowait((message[0], message[2]))
 
-def send(message, writer):
+async def send(message, writer):
     info = eval(message[1:-1])
     segment = str(info[0])
     tile = str(info[1])
@@ -43,18 +48,20 @@ def send(message, writer):
     writer.write(data)
 
     file_name = FILE_BASE_NAME+file_info+FILE_FORMAT
-    print("Sending file for tile " + tile + " and segment " + segment)
+    #print("Sending file for tile " + tile + " and segment " + segment)
 
     with open(file_name, "rb") as binaryfile:
         not_finished = True
+        chunk_n = 1
         while not_finished:
-            chunk = binaryfile.read(4096)
+            chunk = binaryfile.read(1024)
             if not chunk:
                 writer.write(struct.pack('<L', 0))
                 not_finished = False
             else:
-                writer.write(struct.pack('<L', 4096))
+                writer.write(struct.pack('<L', len(chunk)))
                 writer.write(chunk)
+                chunk_n+=1
 
     # If first time send mp4
     # If not, just the m4s

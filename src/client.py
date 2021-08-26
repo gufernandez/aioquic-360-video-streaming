@@ -27,7 +27,6 @@ async def aioquic_client():
         await handle_stream(reader, writer)
 
 async def handle_stream(reader, writer):
-    received_files = 0
     # User input
     asyncio.ensure_future(receive(reader))
     # Server data received
@@ -41,16 +40,12 @@ async def handle_stream(reader, writer):
     # Total frames
     total_frames = 0
 
-
-    # User input (currently simulated by CSV)
+    # USER INPUT (currently simulated by CSV)
     with open('../data/example.csv') as csv_file:
         csv_reader = csv.reader(csv_file, delimiter=',')
         frame = 0
         video_segment = 0
         frame_request = 1
-
-        # Track start time
-        start_time = datetime.datetime.now()
 
         for row in csv_reader:
             frame_time = datetime.datetime.now()
@@ -60,10 +55,7 @@ async def handle_stream(reader, writer):
             if frame == frame_request:
                 video_segment += 1
 
-                if video_segment > 10:
-                    break
-
-                # Tiles in user FOV
+                # SEND REQUEST FOR TILES IN FOV WITH HIGHER PRIORITY
                 for tile in row:
                     tile = int(tile)
                     if index != 0:
@@ -79,7 +71,7 @@ async def handle_stream(reader, writer):
                         not_in_fov.remove(tile)
                     index += 1
 
-                # Also request tiles not in User FOV, but with lower priority
+                # REQUESTS FOR THE TILES THAT ARE NOT IN FOV WITH LOWER PRIORITY
                 for tile in not_in_fov:
                     message = [video_segment, 2, tile]
                     message_data = str(message).encode()
@@ -92,10 +84,9 @@ async def handle_stream(reader, writer):
 
                 await asyncio.sleep(0.1)
 
-            # Frames to check missing ratio
+            # CHECK FOR MISSING RATIO
             if frame != 0:
-
-                # Wait for the time of the frame to be valid
+                # Wait for the actual time of the frame
                 waiting_for_time = True
                 while waiting_for_time:
                     time_now = datetime.datetime.now()
@@ -112,13 +103,18 @@ async def handle_stream(reader, writer):
                             missed_frames += 1
                     index += 1
 
+                # On last segment, print the results
+                if video_segment == 10:
+                    percentage = round((missed_frames/total_frames)*100, 2)
+                    print("Total tiles: "+str(total_frames))
+                    print("Missed tiles: "+str(missed_frames))
+                    print("Missing ratio: "+str(percentage)+"%")
+                    return
+
             frame += 1
 
-    while received_files < 200:
-        await asyncio.sleep(10)
-
 def is_segment_missed(tile, segment):
-    return not os.path.isfile(FILE_BASE_NAME + str(tile) + '_' + str(segment) + FILE_FORMAT)
+    return not os.path.isfile(FILE_BASE_NAME + str(tile).strip() + '_' + str(segment).strip() + FILE_FORMAT)
 
 async def receive(reader):
     while True:
@@ -126,7 +122,7 @@ async def receive(reader):
         file_name_data = await reader.readexactly(size)
         file_info = file_name_data.decode()
 
-        print("Received "+file_info)
+        #print("Received "+file_info)
 
         file_name = FILE_BASE_NAME+file_info+FILE_FORMAT
         with open(file_name, "wb") as newFile:
@@ -136,7 +132,7 @@ async def receive(reader):
                 if file_size == 0:
                     not_finished = False
                 else:
-                    chunk = await reader.read(file_size)
+                    chunk = await reader.readexactly(file_size)
                     newFile.write(binascii.hexlify(chunk))
 
 
