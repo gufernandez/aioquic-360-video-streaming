@@ -1,3 +1,4 @@
+import argparse
 import asyncio
 import struct
 from asyncio import Queue
@@ -6,8 +7,6 @@ from aioquic.asyncio import serve
 from aioquic.quic.configuration import QuicConfiguration
 from queues import StrictPriorityQueue
 
-QUEUE_MODE = 'SP'
-CLIENT_ID = '1'
 FILE_BASE_NAME = '../data/segments/video_tiled_dash_track'
 FILE_FORMAT = '.m4s'
 DASH = '10000'
@@ -15,10 +14,18 @@ MAX_TILE = 201
 FPS = 30
 FRAME_TIME_MS = 33.33
 
+def handle_stream(reader, writer):
+    asyncio.ensure_future(handle_echo(reader, writer))
+
 async def handle_echo(reader, writer):
-    queue = StrictPriorityQueue()
+    if Queue_Type == "SP":
+        queue = StrictPriorityQueue()
+    else:
+        queue = Queue()
+
     name = await reader.read(1024)
-    name.decode()
+
+    print("Connection with "+str(name.decode()))
 
     asyncio.ensure_future(receive(reader, queue))
     while True:
@@ -31,7 +38,7 @@ async def receive(reader, queue):
         message_data = await reader.readexactly(size)
 
         message = eval(message_data.decode())
-        if QUEUE_MODE == "SP":
+        if Queue_Type == "SP":
             queue.put_nowait((int(message[1]), (message[0], message[2])))
         else:
             queue.put_nowait((message[0], message[2]))
@@ -48,7 +55,6 @@ async def send(message, writer):
     writer.write(data)
 
     file_name = FILE_BASE_NAME+file_info+FILE_FORMAT
-    #print("Sending file for tile " + tile + " and segment " + segment)
 
     with open(file_name, "rb") as binaryfile:
         not_finished = True
@@ -66,23 +72,62 @@ async def send(message, writer):
     # If first time send mp4
     # If not, just the m4s
 
-def handle_stream(reader, writer):
-    asyncio.ensure_future(handle_echo(reader, writer))
 
-async def main():
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="QUIC Video Server")
+
+    parser.add_argument(
+        "-c",
+        "--certificate",
+        type=str,
+        required=True,
+        help="load the TLS certificate from the specified file",
+    )
+    parser.add_argument(
+        "--host",
+        type=str,
+        default="::",
+        help="listen on the specified address (defaults to ::)",
+    )
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=4433,
+        help="listen on the specified port (defaults to 4433)",
+    )
+    parser.add_argument(
+        "-k",
+        "--private-key",
+        type=str,
+        required=True,
+        help="load the TLS private key from the specified file",
+    )
+    parser.add_argument(
+        "-q",
+        "--queue",
+        type=str,
+        default="FIFO",
+        help="the type of Queuing used by the server",
+    )
+    args = parser.parse_args()
+
+    global Queue_Type
+    Queue_Type = args.queue
+
     configuration = QuicConfiguration(
         is_client=False,
         max_datagram_frame_size=65536
     )
 
-    configuration.load_cert_chain('../cert/ssl_cert.pem', '../cert/ssl_key.pem')
+    configuration.load_cert_chain(args.certificate, args.private_key)
 
-    await serve('127.0.0.1',
-                8888,
-                configuration=configuration,
-                stream_handler=handle_stream,)
+    asyncio.ensure_future(
+        serve(args.host,
+              args.port,
+              configuration=configuration,
+              stream_handler=handle_stream
+        )
+    )
 
-
-asyncio.ensure_future(main())
-loop = asyncio.get_event_loop()
-loop.run_forever()
+    loop = asyncio.get_event_loop()
+    loop.run_forever()

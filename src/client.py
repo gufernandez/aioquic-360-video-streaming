@@ -1,3 +1,4 @@
+import argparse
 import asyncio
 import binascii
 import csv
@@ -5,6 +6,7 @@ import struct
 import time
 import datetime
 import os.path
+from urllib.parse import urlparse
 
 from aioquic.asyncio import QuicConnectionProtocol
 from aioquic.asyncio.client import connect
@@ -18,10 +20,10 @@ MAX_TILE = 201
 FPS = 30
 FRAME_TIME_MS = 33333
 
-async def aioquic_client():
+async def aioquic_client(ca_cert: str, connection_host: str, connection_port: int):
     configuration = QuicConfiguration(is_client=True)
-    configuration.load_verify_locations('../cert/pycacert.pem')
-    async with connect('127.0.0.1', 8888, configuration=configuration) as client:
+    configuration.load_verify_locations(ca_cert)
+    async with connect(connection_host, connection_port, configuration=configuration) as client:
         connection_protocol = QuicConnectionProtocol
         reader, writer = await connection_protocol.create_stream(client)
         await handle_stream(reader, writer)
@@ -41,7 +43,7 @@ async def handle_stream(reader, writer):
     total_frames = 0
 
     # USER INPUT (currently simulated by CSV)
-    with open('../data/example.csv') as csv_file:
+    with open(User_Input_File) as csv_file:
         csv_reader = csv.reader(csv_file, delimiter=',')
         frame = 0
         video_segment = 0
@@ -139,5 +141,37 @@ async def receive(reader):
 async def main():
     await aioquic_client()
 
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="HTTP/3 client for video streaming")
+    parser.add_argument(
+        "url",
+        type=str,
+        help="the URL to query (must be HTTPS)"
+    )
+    parser.add_argument(
+        "-c",
+        "--ca-certs",
+        type=str,
+        help="load CA certificates from the specified file"
+    )
+    parser.add_argument(
+        "-i",
+        "--user-input",
+        required=True,
+        type=str,
+        help="CSV file with user input simulation",
+    )
+    args = parser.parse_args()
 
-asyncio.get_event_loop().run_until_complete(main())
+    global User_Input_File
+    User_Input_File = args.user_input
+
+    parsed = urlparse(args.url[0])
+    host = parsed.hostname
+
+    if parsed.port is not None:
+        port = parsed.port
+    else:
+        port = 4433
+
+    asyncio.get_event_loop().run_until_complete(aioquic_client(ca_cert=args.ca_certs, connection_host=host, connection_port=port))

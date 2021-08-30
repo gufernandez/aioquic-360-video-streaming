@@ -12,7 +12,7 @@ class StrictPriorityQueue(Queue):
     def _get(self, heappop=heapq.heappop):
         return heappop(self._queue)[1]
 
-
+# NOT WORKING PROPERLY
 class WeightedFairQueue(Queue):
 
     def _init(self, maxsize):
