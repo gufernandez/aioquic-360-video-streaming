@@ -3,7 +3,6 @@ import asyncio
 import binascii
 import csv
 import struct
-import time
 import datetime
 import os.path
 from urllib.parse import urlparse
@@ -51,13 +50,13 @@ async def handle_stream(reader, writer):
 
         for row in csv_reader:
             frame_time = datetime.datetime.now()
-            index = 0
             not_in_fov = tiles_list.copy()
             # Frame to make request
             if frame == frame_request:
                 video_segment += 1
 
                 # SEND REQUEST FOR TILES IN FOV WITH HIGHER PRIORITY
+                index = 0
                 for tile in row:
                     tile = int(tile)
                     if index != 0:
@@ -98,6 +97,7 @@ async def handle_stream(reader, writer):
                         waiting_for_time = False
 
                 # Check for missing segments
+                index = 0
                 for tile in row:
                     if index != 0:
                         total_frames += 1
