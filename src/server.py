@@ -5,7 +5,7 @@ from asyncio import Queue
 
 from aioquic.asyncio import serve
 from aioquic.quic.configuration import QuicConfiguration
-from queues import StrictPriorityQueue
+from queues import StrictPriorityQueue, WeightedFairQueue
 
 FILE_BASE_NAME = '../data/segments/video_tiled_dash_track'
 FILE_FORMAT = '.m4s'
@@ -18,7 +18,9 @@ def handle_stream(reader, writer):
     asyncio.ensure_future(handle_echo(reader, writer))
 
 async def handle_echo(reader, writer):
-    if Queue_Type == "SP":
+    if Queue_Type == "WFQ":
+        queue = WeightedFairQueue()
+    elif Queue_Type == "SP":
         queue = StrictPriorityQueue()
     else:
         queue = Queue()
@@ -38,7 +40,9 @@ async def receive(reader, queue):
         message_data = await reader.readexactly(size)
 
         message = eval(message_data.decode())
-        if Queue_Type == "SP":
+        if Queue_Type == "WFQ":
+            queue.put_nowait((int(message[1]), size, (message[0], message[2])))
+        elif Queue_Type == "SP":
             queue.put_nowait((int(message[1]), (message[0], message[2])))
         else:
             queue.put_nowait((message[0], message[2]))
