@@ -2,6 +2,12 @@ import argparse
 import os
 
 def main(video_url: str):
+    os.system("rm -rf ../data/video_encoding")
+    os.system("rm -rf ../data/segments")
+
+    os.system("mkdir ../data/video_encoding")
+    os.system("mkdir ../data/segments")
+
     # Video download
     os.system("youtube-dl -o \"../data/video_encoding/downloaded.mp4\" -f best "+video_url)
 
@@ -11,16 +17,40 @@ def main(video_url: str):
     # Video conversion to YUV format
     os.system("ffmpeg -i \"../data/video_encoding/trimmed.mp4\" \"../data/video_encoding/input.yuv\"")
 
-    # Tile encoding
+    # Tile encoding 1Mbps
     os.system("kvazaar -i \"../data/video_encoding/input.yuv\" --input-res 3840x2160 -o \"../data/video_encoding/output.hvc\" "
               "--tiles 10x20 --slices tiles --mv-constraint frametilemargin --bitrate 1Mbps --period 30 --input-fps 30")
 
+    # Tile encoding 2Mbps
+    os.system(
+        "kvazaar -i \"../data/video_encoding/input.yuv\" --input-res 3840x2160 -o \"../data/video_encoding/output2.hvc\" "
+        "--tiles 10x20 --slices tiles --mv-constraint frametilemargin --bitrate 2Mbps --period 30 --input-fps 30")
+
+    # Tile encoding 5Mbps
+    os.system(
+        "kvazaar -i \"../data/video_encoding/input.yuv\" --input-res 3840x2160 -o \"../data/video_encoding/output5.hvc\" "
+        "--tiles 10x20 --slices tiles --mv-constraint frametilemargin --bitrate 5Mbps --period 30 --input-fps 30")
+
     # Tile packer
-    os.system("MP4Box -add \"../data/video_encoding/output.hvc\":split_tiles -new \"../data/video_encoding/video_tiled.mp4\"")
+    os.system("MP4Box -add \"../data/video_encoding/output.hvc\":split_tiles -new \"../data/video_encoding/video_tiled_1.mp4\"")
+
+    # Tile packer
+    os.system("MP4Box -add \"../data/video_encoding/output2.hvc\":split_tiles -new \"../data/video_encoding/video_tiled_2.mp4\"")
+
+    # Tile packer
+    os.system("MP4Box -add \"../data/video_encoding/output5.hvc\":split_tiles -new \"../data/video_encoding/video_tiled_5.mp4\"")
 
     # Split tiles
-    os.system("MP4Box -dash 1000 -rap -frag-rap -profile live -out \"../data/video_encoding/segments/dash_tiled.mpd\""
-              " \"../data/video_encoding/video_tiled.mp4\"")
+    os.system("MP4Box -dash 1000 -rap -frag-rap -profile live -out \"../data/segments/dash_tiled_1.mpd\""
+              " \"../data/video_encoding/video_tiled_1.mp4\"")
+
+    # Split tiles
+    os.system("MP4Box -dash 1000 -rap -frag-rap -profile live -out \"../data/segments/dash_tiled_2.mpd\""
+              " \"../data/video_encoding/video_tiled_2.mp4\"")
+
+    # Split tiles
+    os.system("MP4Box -dash 1000 -rap -frag-rap -profile live -out \"../data/segments/dash_tiled_5.mpd\""
+              " \"../data/video_encoding/video_tiled_5.mp4\"")
 
 
 if __name__ == "__main__":

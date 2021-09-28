@@ -4,20 +4,17 @@ import binascii
 import csv
 import struct
 import datetime
-import os.path
 from urllib.parse import urlparse
 
 from aioquic.asyncio import QuicConnectionProtocol
 from aioquic.asyncio.client import connect
 from aioquic.quic.configuration import QuicConfiguration
 
+from src.data_types import VideoPacket, QUICPacket
+from src.utils import message_to_VideoPacket, get_client_file_name, segment_exists
+from src.video_constants import HIGH_PRIORITY, FRAME_TIME_MS, LOW_PRIORITY, VIDEO_FPS, CLIENT_BITRATE, N_SEGMENTS
+
 CLIENT_ID = '1'
-FILE_BASE_NAME = '../data/client_files/video_tiled_dash_track'
-FILE_FORMAT = '.m4s'
-DASH = '10000'
-MAX_TILE = 201
-FPS = 30
-FRAME_TIME_MS = 33333
 
 async def aioquic_client(ca_cert: str, connection_host: str, connection_port: int):
     configuration = QuicConfiguration(is_client=True)
@@ -26,6 +23,14 @@ async def aioquic_client(ca_cert: str, connection_host: str, connection_port: in
         connection_protocol = QuicConnectionProtocol
         reader, writer = await connection_protocol.create_stream(client)
         await handle_stream(reader, writer)
+
+async def send_data(writer, stream_id, end_stream, packet=None):
+    data = QUICPacket(stream_id, end_stream, packet).serialize()
+
+    writer.write(struct.pack('<L', len(data)))
+    writer.write(data)
+
+    await asyncio.sleep(0.0001)
 
 async def handle_stream(reader, writer):
     # User input
@@ -60,30 +65,19 @@ async def handle_stream(reader, writer):
                 for tile in row:
                     tile = int(tile)
                     if index != 0:
-                        if not segment_exists(tile, video_segment):
+                        if not segment_exists(video_segment, tile, CLIENT_BITRATE):
                             # Smaller the number, bigger the priority
-                            message = [video_segment, 1, tile]
-                            message_data = str(message).encode()
-
-                            writer.write(struct.pack('<L', len(message_data)))
-                            writer.write(message_data)
-
-                            await asyncio.sleep(0.0001)
-
+                            message = VideoPacket(video_segment, tile, HIGH_PRIORITY, 1)
+                            await send_data(writer, stream_id=CLIENT_ID, end_stream=False, packet=message)
                         not_in_fov.remove(tile)
                     index += 1
 
                 # REQUESTS FOR THE TILES THAT ARE NOT IN FOV WITH LOWER PRIORITY
                 for tile in not_in_fov:
-                    if not segment_exists(tile, video_segment):
-                        message = [video_segment, 2, tile]
-                        message_data = str(message).encode()
-
-                        writer.write(struct.pack('<L', len(message_data)))
-                        writer.write(message_data)
-
-                        await asyncio.sleep(0.0001)
-                frame_request += FPS
+                    if not segment_exists(video_segment, tile, CLIENT_BITRATE):
+                        message = VideoPacket(video_segment, tile, LOW_PRIORITY)
+                        await send_data(writer, stream_id=CLIENT_ID, end_stream=False, packet=message)
+                frame_request += VIDEO_FPS
 
                 await asyncio.sleep(0.1)
 
@@ -103,30 +97,28 @@ async def handle_stream(reader, writer):
                 for tile in row:
                     if index != 0:
                         total_frames += 1
-                        if not segment_exists(tile, video_segment):
+                        if not segment_exists(video_segment, tile, CLIENT_BITRATE):
                             missed_frames += 1
                     index += 1
 
-                # On last segment, print the results
-                if video_segment == 10:
+                # On last segment, print the results and end connection
+                if video_segment == N_SEGMENTS:
                     percentage = round((missed_frames/total_frames)*100, 2)
                     print("Total tiles: "+str(total_frames))
                     print("Missed tiles: "+str(missed_frames))
                     print("Missing ratio: "+str(percentage)+"%")
+                    await send_data(writer, stream_id=CLIENT_ID, end_stream=True)
                     return
 
             frame += 1
-
-def segment_exists(tile, segment):
-    return os.path.isfile(FILE_BASE_NAME + str(tile).strip() + '_' + str(segment).strip() + FILE_FORMAT)
 
 async def receive(reader):
     while True:
         size, = struct.unpack('<L', await reader.readexactly(4))
         file_name_data = await reader.readexactly(size)
-        file_info = file_name_data.decode()
+        file_info = message_to_VideoPacket(eval(file_name_data.decode()))
 
-        file_name = FILE_BASE_NAME+file_info+FILE_FORMAT
+        file_name = get_client_file_name(segment=file_info.segment, tile=file_info.tile, bitrate=file_info.bitrate)
         with open(file_name, "wb") as newFile:
             not_finished = True
             while not_finished:

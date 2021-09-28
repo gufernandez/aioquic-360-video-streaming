@@ -6,22 +6,20 @@ from asyncio import Queue
 from aioquic.asyncio import serve
 from aioquic.quic.configuration import QuicConfiguration
 from queues import StrictPriorityQueue, WeightedFairQueue
+from src.data_types import VideoRequestMessage, VideoPacket
+from src.utils import message_to_QUICPacket, get_server_file_name
+from src.video_constants import CLOSE_REQUEST, TILE_REQUEST, LOW_PRIORITY, PUSH_REQUEST, WFQ_QUEUE, SP_QUEUE, N_SEGMENTS
 
-FILE_BASE_NAME = '../data/segments/video_tiled_dash_track'
-FILE_FORMAT = '.m4s'
-DASH = '10000'
-MAX_TILE = 201
-FPS = 30
-FRAME_TIME_MS = 33.33
-SEGMENTS = 10
 
 def handle_stream(reader, writer):
     asyncio.ensure_future(handle_echo(reader, writer))
 
 async def handle_echo(reader, writer):
-    if Queue_Type == "WFQ":
+    closed = False
+
+    if Queue_Type == WFQ_QUEUE:
         queue = WeightedFairQueue()
-    elif Queue_Type == "SP":
+    elif Queue_Type == SP_QUEUE:
         queue = StrictPriorityQueue()
     else:
         queue = Queue()
@@ -31,68 +29,85 @@ async def handle_echo(reader, writer):
     print("Connection with "+str(name.decode()))
 
     asyncio.ensure_future(receive(reader, queue))
-    while True:
-        tile = await queue.get()
-        await send(str(tile), writer)
+    while not closed:
+        video_request = await queue.get()
+        if video_request.message_type == CLOSE_REQUEST:
+            closed = True
+        else:
+            await send(video_request, writer)
 
 async def receive(reader, queue):
     last_segment = 1
     tiles_priority = Queue()
     segment = 1
+    closed = False
 
-    while True:
+    while not closed:
         try:
             read_data = await asyncio.wait_for(reader.readexactly(4), timeout=0.01)
             size, = struct.unpack('<L', read_data)
 
             message_data = await reader.readexactly(size)
 
-            message = eval(message_data.decode())
-            message_type = 'tile_request'
+            message = message_to_QUICPacket(eval(message_data.decode()))
 
-            segment = message[0]
-            priority = int(message[1])
-            tile = message[2]
+            if message.end_stream:
+                message_type = CLOSE_REQUEST
 
-            if segment != last_segment:
-                tiles_priority = Queue()
-                last_segment = segment
+                priority = LOW_PRIORITY
+                segment = 0
+                tile = 0
+                bitrate = 0
 
-            tiles_priority.put_nowait((priority, tile))
+                closed = True
+            else:
+                message_type = TILE_REQUEST
+
+                segment = message.video_packet.segment
+                priority = message.video_packet.priority
+                tile = message.video_packet.tile
+                bitrate = message.video_packet.bitrate
+
+                if segment != last_segment:
+                    tiles_priority = Queue()
+                    last_segment = segment
+
+                tiles_priority.put_nowait((priority, tile, bitrate))
 
         except asyncio.TimeoutError:
             if segment == last_segment:
                 segment += 1
 
-            priority, tile = await tiles_priority.get()
-            message_type = 'push'
+            priority, tile, bitrate = await tiles_priority.get()
+            message_type = PUSH_REQUEST
 
-        if Queue_Type == "WFQ":
-            queue.put_nowait((priority, size, (message_type, segment, tile)))
-        elif Queue_Type == "SP":
-            queue.put_nowait((priority, (message_type, segment, tile)))
-        else:
-            queue.put_nowait((message_type, segment, tile))
+        if segment <= N_SEGMENTS:
+            data = VideoRequestMessage(message_type, segment, tile, bitrate)
+            if Queue_Type == WFQ_QUEUE:
+                queue.put_nowait((priority, size, data))
+            elif Queue_Type == SP_QUEUE:
+                queue.put_nowait((priority, data))
+            else:
+                queue.put_nowait(data)
 
-async def send(message, writer):
-    info = eval(message[1:-1])
-    message_type = str(info[0])
-    segment = str(info[1])
-    tile = str(info[2])
+async def send(message: VideoRequestMessage, writer):
+    segment = message.segment
+    tile = message.tile
+    bitrate = message.bitrate
 
-    file_info = tile+'_'+segment
-    data = file_info.encode()
+    video_info = VideoPacket(segment=segment, tile=tile, bitrate=bitrate)
+    data = video_info.serialize()
 
     writer.write(struct.pack('<L', len(data)))
     writer.write(data)
 
-    file_name = FILE_BASE_NAME+file_info+FILE_FORMAT
+    file_name = get_server_file_name(segment=segment, tile=tile, bitrate=bitrate)
 
-    with open(file_name, "rb") as binaryfile:
+    with open(file_name, "rb") as video_file:
         not_finished = True
         chunk_n = 1
         while not_finished:
-            chunk = binaryfile.read(1024)
+            chunk = video_file.read(1024)
             if not chunk:
                 writer.write(struct.pack('<L', 0))
                 not_finished = False
