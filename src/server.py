@@ -13,6 +13,7 @@ DASH = '10000'
 MAX_TILE = 201
 FPS = 30
 FRAME_TIME_MS = 33.33
+SEGMENTS = 10
 
 def handle_stream(reader, writer):
     asyncio.ensure_future(handle_echo(reader, writer))
@@ -35,22 +36,49 @@ async def handle_echo(reader, writer):
         await send(str(tile), writer)
 
 async def receive(reader, queue):
-    while True:
-        size, = struct.unpack('<L', await reader.readexactly(4))
-        message_data = await reader.readexactly(size)
+    last_segment = 1
+    tiles_priority = Queue()
+    segment = 1
 
-        message = eval(message_data.decode())
+    while True:
+        try:
+            read_data = await asyncio.wait_for(reader.readexactly(4), timeout=0.01)
+            size, = struct.unpack('<L', read_data)
+
+            message_data = await reader.readexactly(size)
+
+            message = eval(message_data.decode())
+            message_type = 'tile_request'
+
+            segment = message[0]
+            priority = int(message[1])
+            tile = message[2]
+
+            if segment != last_segment:
+                tiles_priority = Queue()
+                last_segment = segment
+
+            tiles_priority.put_nowait((priority, tile))
+
+        except asyncio.TimeoutError:
+            if segment == last_segment:
+                segment += 1
+
+            priority, tile = await tiles_priority.get()
+            message_type = 'push'
+
         if Queue_Type == "WFQ":
-            queue.put_nowait((int(message[1]), size, (message[0], message[2])))
+            queue.put_nowait((priority, size, (message_type, segment, tile)))
         elif Queue_Type == "SP":
-            queue.put_nowait((int(message[1]), (message[0], message[2])))
+            queue.put_nowait((priority, (message_type, segment, tile)))
         else:
-            queue.put_nowait((message[0], message[2]))
+            queue.put_nowait((message_type, segment, tile))
 
 async def send(message, writer):
     info = eval(message[1:-1])
-    segment = str(info[0])
-    tile = str(info[1])
+    message_type = str(info[0])
+    segment = str(info[1])
+    tile = str(info[2])
 
     file_info = tile+'_'+segment
     data = file_info.encode()
@@ -72,9 +100,6 @@ async def send(message, writer):
                 writer.write(struct.pack('<L', len(chunk)))
                 writer.write(chunk)
                 chunk_n+=1
-
-    # If first time send mp4
-    # If not, just the m4s
 
 
 if __name__ == "__main__":

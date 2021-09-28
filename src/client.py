@@ -60,27 +60,29 @@ async def handle_stream(reader, writer):
                 for tile in row:
                     tile = int(tile)
                     if index != 0:
-                        # Smaller the number, bigger the priority
-                        message = [video_segment, 1, tile]
-                        message_data = str(message).encode()
+                        if not segment_exists(tile, video_segment):
+                            # Smaller the number, bigger the priority
+                            message = [video_segment, 1, tile]
+                            message_data = str(message).encode()
 
-                        writer.write(struct.pack('<L', len(message_data)))
-                        writer.write(message_data)
+                            writer.write(struct.pack('<L', len(message_data)))
+                            writer.write(message_data)
 
-                        await asyncio.sleep(0.0001)
+                            await asyncio.sleep(0.0001)
 
                         not_in_fov.remove(tile)
                     index += 1
 
                 # REQUESTS FOR THE TILES THAT ARE NOT IN FOV WITH LOWER PRIORITY
                 for tile in not_in_fov:
-                    message = [video_segment, 2, tile]
-                    message_data = str(message).encode()
+                    if not segment_exists(tile, video_segment):
+                        message = [video_segment, 2, tile]
+                        message_data = str(message).encode()
 
-                    writer.write(struct.pack('<L', len(message_data)))
-                    writer.write(message_data)
+                        writer.write(struct.pack('<L', len(message_data)))
+                        writer.write(message_data)
 
-                    await asyncio.sleep(0.0001)
+                        await asyncio.sleep(0.0001)
                 frame_request += FPS
 
                 await asyncio.sleep(0.1)
@@ -101,7 +103,7 @@ async def handle_stream(reader, writer):
                 for tile in row:
                     if index != 0:
                         total_frames += 1
-                        if is_segment_missed(tile, video_segment):
+                        if not segment_exists(tile, video_segment):
                             missed_frames += 1
                     index += 1
 
@@ -115,16 +117,14 @@ async def handle_stream(reader, writer):
 
             frame += 1
 
-def is_segment_missed(tile, segment):
-    return not os.path.isfile(FILE_BASE_NAME + str(tile).strip() + '_' + str(segment).strip() + FILE_FORMAT)
+def segment_exists(tile, segment):
+    return os.path.isfile(FILE_BASE_NAME + str(tile).strip() + '_' + str(segment).strip() + FILE_FORMAT)
 
 async def receive(reader):
     while True:
         size, = struct.unpack('<L', await reader.readexactly(4))
         file_name_data = await reader.readexactly(size)
         file_info = file_name_data.decode()
-
-        #print("Received "+file_info)
 
         file_name = FILE_BASE_NAME+file_info+FILE_FORMAT
         with open(file_name, "wb") as newFile:
@@ -136,10 +136,6 @@ async def receive(reader):
                 else:
                     chunk = await reader.readexactly(file_size)
                     newFile.write(binascii.hexlify(chunk))
-
-
-async def main():
-    await aioquic_client()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="HTTP/3 client for video streaming")
