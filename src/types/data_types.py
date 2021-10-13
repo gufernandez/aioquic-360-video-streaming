@@ -13,16 +13,20 @@ class VideoPacket:
         return str(message).encode()
 
 class QUICPacket:
-    def __init__(self, stream_id, end_stream, video_packet=None):
+    def __init__(self, stream_id, end_stream, video_packet=None, push_status=None):
         self.stream_id = stream_id
         self.video_packet = video_packet
         self.end_stream = end_stream
+        self.push_status = push_status
 
     def serialize(self):
         message = [self.stream_id, self.end_stream]
 
         if self.video_packet:
             message += self.video_packet.get_list()
+
+        if self.push_status:
+            message += self.push_status
 
         return str(message).encode()
 

@@ -10,9 +10,10 @@ from aioquic.asyncio import QuicConnectionProtocol
 from aioquic.asyncio.client import connect
 from aioquic.quic.configuration import QuicConfiguration
 
-from src.data_types import VideoPacket, QUICPacket
+from src.types.data_types import VideoPacket, QUICPacket
 from src.utils import message_to_VideoPacket, get_client_file_name, segment_exists
-from src.video_constants import HIGH_PRIORITY, FRAME_TIME_MS, LOW_PRIORITY, VIDEO_FPS, CLIENT_BITRATE, N_SEGMENTS
+from src.constants.video_constants import HIGH_PRIORITY, FRAME_TIME_MS, LOW_PRIORITY, VIDEO_FPS, CLIENT_BITRATE, N_SEGMENTS, \
+    PUSH_RECEIVED
 
 CLIENT_ID = '1'
 
@@ -24,8 +25,8 @@ async def aioquic_client(ca_cert: str, connection_host: str, connection_port: in
         reader, writer = await connection_protocol.create_stream(client)
         await handle_stream(reader, writer)
 
-async def send_data(writer, stream_id, end_stream, packet=None):
-    data = QUICPacket(stream_id, end_stream, packet).serialize()
+async def send_data(writer, stream_id, end_stream, packet=None, push_status=None):
+    data = QUICPacket(stream_id, end_stream, packet, push_status).serialize()
 
     writer.write(struct.pack('<L', len(data)))
     writer.write(data)
@@ -59,24 +60,30 @@ async def handle_stream(reader, writer):
             # Frame to make request
             if frame == frame_request:
                 video_segment += 1
+                print("Client requesting segment: ", video_segment)
 
                 # SEND REQUEST FOR TILES IN FOV WITH HIGHER PRIORITY
                 index = 0
                 for tile in row:
                     tile = int(tile)
                     if index != 0:
+                        message = VideoPacket(video_segment, tile, HIGH_PRIORITY, 1)
+                        push_status = PUSH_RECEIVED
                         if not segment_exists(video_segment, tile, CLIENT_BITRATE):
-                            # Smaller the number, bigger the priority
-                            message = VideoPacket(video_segment, tile, HIGH_PRIORITY, 1)
-                            await send_data(writer, stream_id=CLIENT_ID, end_stream=False, packet=message)
+                            push_status = None
+
+                        await send_data(writer, stream_id=CLIENT_ID, end_stream=False, packet=message, push_status=push_status)
                         not_in_fov.remove(tile)
                     index += 1
 
                 # REQUESTS FOR THE TILES THAT ARE NOT IN FOV WITH LOWER PRIORITY
                 for tile in not_in_fov:
+                    message = VideoPacket(video_segment, tile, LOW_PRIORITY)
+                    push_status = PUSH_RECEIVED
                     if not segment_exists(video_segment, tile, CLIENT_BITRATE):
-                        message = VideoPacket(video_segment, tile, LOW_PRIORITY)
-                        await send_data(writer, stream_id=CLIENT_ID, end_stream=False, packet=message)
+                        push_status = None
+
+                    await send_data(writer, stream_id=CLIENT_ID, end_stream=False, packet=message, push_status=push_status)
                 frame_request += VIDEO_FPS
 
                 await asyncio.sleep(0.1)

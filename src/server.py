@@ -2,13 +2,15 @@ import argparse
 import asyncio
 import struct
 from asyncio import Queue
+from collections import deque
 
 from aioquic.asyncio import serve
 from aioquic.quic.configuration import QuicConfiguration
-from queues import StrictPriorityQueue, WeightedFairQueue
-from src.data_types import VideoRequestMessage, VideoPacket
+from src.types.queues import StrictPriorityQueue, WeightedFairQueue
+from src.types.data_types import VideoRequestMessage, VideoPacket
 from src.utils import message_to_QUICPacket, get_server_file_name
-from src.video_constants import CLOSE_REQUEST, TILE_REQUEST, LOW_PRIORITY, PUSH_REQUEST, WFQ_QUEUE, SP_QUEUE, N_SEGMENTS
+from src.constants.video_constants import CLOSE_REQUEST, TILE_REQUEST, PUSH_REQUEST, WFQ_QUEUE, SP_QUEUE, \
+    N_SEGMENTS, PUSH_CANCEL, HIGHEST_PRIORITY, PUSH_RECEIVED
 
 
 def handle_stream(reader, writer):
@@ -38,9 +40,10 @@ async def handle_echo(reader, writer):
 
 async def receive(reader, queue):
     last_segment = 1
-    tiles_priority = Queue()
+    tiles_priority = deque()
     segment = 1
     closed = False
+    is_push_allowed = False
 
     while not closed:
         try:
@@ -54,14 +57,25 @@ async def receive(reader, queue):
             if message.end_stream:
                 message_type = CLOSE_REQUEST
 
-                priority = LOW_PRIORITY
+                priority = HIGHEST_PRIORITY
                 segment = 0
                 tile = 0
                 bitrate = 0
 
                 closed = True
+            elif message.push_status == PUSH_CANCEL:
+                message_type = PUSH_CANCEL
+
+                priority = HIGHEST_PRIORITY
+                tile = 0
+                bitrate = 0
+
+                is_push_allowed = False
             else:
-                message_type = TILE_REQUEST
+                if message.push_status == PUSH_RECEIVED:
+                    message_type = PUSH_RECEIVED
+                else:
+                    message_type = TILE_REQUEST
 
                 segment = message.video_packet.segment
                 priority = message.video_packet.priority
@@ -69,19 +83,24 @@ async def receive(reader, queue):
                 bitrate = message.video_packet.bitrate
 
                 if segment != last_segment:
-                    tiles_priority = Queue()
+                    tiles_priority = deque()
                     last_segment = segment
+                    if message_type == TILE_REQUEST:
+                        print("STARTED SENDING SEGMENT: ", segment)
 
-                tiles_priority.put_nowait((priority, tile, bitrate))
+                tiles_priority.appendleft((priority, tile, bitrate))
+                is_push_allowed = True
 
         except asyncio.TimeoutError:
-            if segment == last_segment:
-                segment += 1
+            if is_push_allowed:
+                message_type = PUSH_REQUEST
+                if segment == last_segment:
+                    segment += 1
+                    print("PUSHING SEGMENT: ", segment)
 
-            priority, tile, bitrate = await tiles_priority.get()
-            message_type = PUSH_REQUEST
+                priority, tile, bitrate = tiles_priority.pop()
 
-        if segment <= N_SEGMENTS:
+        if segment <= N_SEGMENTS and message_type != PUSH_RECEIVED:
             data = VideoRequestMessage(message_type, segment, tile, bitrate)
             if Queue_Type == WFQ_QUEUE:
                 queue.put_nowait((priority, size, data))

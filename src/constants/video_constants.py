@@ -1,6 +1,6 @@
 # File location
-CLIENT_FILE_LOCATION = '../data/client_files/'
-SERVER_FILE_LOCATION = '../data/segments/'
+CLIENT_FILE_LOCATION = '../../data/client_files/'
+SERVER_FILE_LOCATION = '../../data/segments/'
 FILE_BASE_NAME = 'video_tiled_'
 FILE_END_NAME = '_dash_track'
 CLIENT_FILE_BASE_NAME = '../data/client_files/video_tiled_dash_track'
@@ -16,6 +16,7 @@ N_SEGMENTS = 6
 CLIENT_BITRATE = 1
 
 # Priorities
+HIGHEST_PRIORITY = 0
 HIGH_PRIORITY = 1
 LOW_PRIORITY = 2
 
@@ -23,6 +24,11 @@ LOW_PRIORITY = 2
 TILE_REQUEST = 'tile'
 PUSH_REQUEST = 'push'
 CLOSE_REQUEST = 'close'
+
+# Push status
+PUSH_CANCEL = 'push_cancel'
+PUSH_RECEIVED = 'push_received'
+PUSH_PROMISE = 'push_promise'
 
 # Queues
 WFQ_QUEUE = 'WFQ'

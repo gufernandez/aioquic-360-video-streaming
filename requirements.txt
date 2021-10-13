@@ -17,3 +17,4 @@ pylsqpack~=0.3.12
 certifi~=2018.1.18
 ply~=3.11
 pycparser~=2.20
+mininet~=2.3.0.dev6
