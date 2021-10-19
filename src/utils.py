@@ -1,6 +1,6 @@
 import os
 
-from src.types.data_types import QUICPacket, VideoPacket
+from src.structures.data_types import QUICPacket, VideoPacket
 from src.constants.video_constants import SERVER_FILE_LOCATION, FILE_BASE_NAME, FILE_END_NAME, FILE_FORMAT, CLIENT_FILE_LOCATION
 
 def message_to_QUICPacket(data):

@@ -6,8 +6,8 @@ from collections import deque
 
 from aioquic.asyncio import serve
 from aioquic.quic.configuration import QuicConfiguration
-from src.types.queues import StrictPriorityQueue, WeightedFairQueue
-from src.types.data_types import VideoRequestMessage, VideoPacket
+from src.structures.queues import StrictPriorityQueue, WeightedFairQueue
+from src.structures.data_types import VideoRequestMessage, VideoPacket
 from src.utils import message_to_QUICPacket, get_server_file_name
 from src.constants.video_constants import CLOSE_REQUEST, TILE_REQUEST, PUSH_REQUEST, WFQ_QUEUE, SP_QUEUE, \
     N_SEGMENTS, PUSH_CANCEL, HIGHEST_PRIORITY, PUSH_RECEIVED

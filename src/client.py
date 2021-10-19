@@ -10,7 +10,7 @@ from aioquic.asyncio import QuicConnectionProtocol
 from aioquic.asyncio.client import connect
 from aioquic.quic.configuration import QuicConfiguration
 
-from src.types.data_types import VideoPacket, QUICPacket
+from src.structures.data_types import VideoPacket, QUICPacket
 from src.utils import message_to_VideoPacket, get_client_file_name, segment_exists
 from src.constants.video_constants import HIGH_PRIORITY, FRAME_TIME_MS, LOW_PRIORITY, VIDEO_FPS, CLIENT_BITRATE, N_SEGMENTS, \
     PUSH_RECEIVED
