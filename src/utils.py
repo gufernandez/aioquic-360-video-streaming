@@ -1,4 +1,5 @@
 import os
+import time
 
 from src.structures.data_types import QUICPacket, VideoPacket
 from src.constants.video_constants import SERVER_FILE_LOCATION, FILE_BASE_NAME, FILE_END_NAME, FILE_FORMAT, CLIENT_FILE_LOCATION
@@ -16,8 +17,18 @@ def message_to_VideoPacket(data):
 def get_server_file_name(segment, tile, bitrate):
     return SERVER_FILE_LOCATION + FILE_BASE_NAME + str(bitrate).strip() + FILE_END_NAME + str(tile).strip() + '_' + str(segment).strip() + FILE_FORMAT
 
-def get_client_file_name(segment, tile, bitrate):
-    return CLIENT_FILE_LOCATION + FILE_BASE_NAME + str(bitrate).strip() + FILE_END_NAME + str(tile).strip() + '_' + str(segment).strip() + FILE_FORMAT
+def get_client_file_name(segment, tile, bitrate, client_id):
+    return get_client_folder(client_id) + FILE_BASE_NAME + str(bitrate).strip() + FILE_END_NAME + str(tile).strip() + '_' + str(segment).strip() + FILE_FORMAT
 
-def segment_exists(segment, tile, bitrate):
-    return os.path.isfile(get_client_file_name(segment, tile, bitrate))
+def segment_exists(segment, tile, bitrate, client_id):
+    return os.path.isfile(get_client_file_name(segment, tile, bitrate, client_id))
+
+def get_user_id():
+    return str(int(time.time()))
+
+def create_user_dir(client_id):
+    print(get_client_folder(client_id))
+    os.makedirs(get_client_folder(client_id))
+
+def get_client_folder(client_id):
+    return CLIENT_FILE_LOCATION + client_id + '/'
