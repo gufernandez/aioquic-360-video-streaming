@@ -20,7 +20,6 @@ async def aioquic_client(ca_cert: str, connection_host: str, connection_port: in
     configuration = QuicConfiguration(is_client=True)
     configuration.load_verify_locations(ca_cert)
     async with connect(connection_host, connection_port, configuration=configuration) as client:
-        print("Connected!")
         connection_protocol = QuicConnectionProtocol
         reader, writer = await connection_protocol.create_stream(client)
         await handle_stream(reader, writer)
@@ -165,11 +164,12 @@ if __name__ == "__main__":
     global User_Input_File
     User_Input_File = args.user_input
 
-    parsed = urlparse(args.url[0])
-    host = parsed.hostname
+    parsed = urlparse(args.url).path
+    url = parsed.split(':')
+    host = url[0]
 
-    if parsed.port is not None:
-        port = parsed.port
+    if len(url) > 1:
+        port = url[1]
     else:
         port = 4433
 
