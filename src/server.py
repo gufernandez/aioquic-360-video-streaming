@@ -1,3 +1,7 @@
+import sys
+from os.path import dirname
+sys.path.append(dirname(__file__))
+
 import argparse
 import asyncio
 import struct
@@ -184,6 +188,9 @@ if __name__ == "__main__":
 
     configuration.load_cert_chain(args.certificate, args.private_key)
 
+    print("Starting Server")
+    print(args.host)
+    print(args.port)
     asyncio.ensure_future(
         serve(args.host,
               args.port,
