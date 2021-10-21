@@ -1,7 +1,3 @@
-import sys
-from os.path import dirname
-sys.path.append(dirname(__file__))
-
 import argparse
 import asyncio
 import binascii
@@ -20,9 +16,11 @@ from src.constants.video_constants import HIGH_PRIORITY, FRAME_TIME_MS, LOW_PRIO
     PUSH_RECEIVED
 
 async def aioquic_client(ca_cert: str, connection_host: str, connection_port: int):
+    print("Connecting to Host", connection_host, connection_port)
     configuration = QuicConfiguration(is_client=True)
     configuration.load_verify_locations(ca_cert)
     async with connect(connection_host, connection_port, configuration=configuration) as client:
+        print("Connected!")
         connection_protocol = QuicConnectionProtocol
         reader, writer = await connection_protocol.create_stream(client)
         await handle_stream(reader, writer)

@@ -132,5 +132,5 @@ dmypy.json
 reference/
 logs/
 data/segments/
-data/client_files/
+data/client_files*
 data/video_encoding/
