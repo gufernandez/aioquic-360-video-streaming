@@ -98,7 +98,11 @@ async def receive(reader, queue):
                     segment += 1
                     print("PUSHING SEGMENT: ", segment)
 
-                priority, tile, bitrate = tiles_priority.pop()
+                if tiles_priority:
+                    priority, tile, bitrate = tiles_priority.pop()  # ISSUE: POP FROM EMPTY QUEUE (PUSHING 7, PUSHING 4)
+                else:
+                    continue
+                # MULTIPLE PUSHES?
 
         if segment <= N_SEGMENTS and message_type != PUSH_RECEIVED:
             data = VideoRequestMessage(message_type, segment, tile, bitrate)
