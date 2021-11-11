@@ -13,7 +13,7 @@ from aioquic.quic.configuration import QuicConfiguration
 from src.structures.data_types import VideoPacket, QUICPacket
 from src.utils import message_to_VideoPacket, get_client_file_name, segment_exists, get_user_id, create_user_dir
 from src.constants.video_constants import HIGH_PRIORITY, FRAME_TIME_MS, LOW_PRIORITY, VIDEO_FPS, CLIENT_BITRATE, N_SEGMENTS, \
-    PUSH_RECEIVED
+    PUSH_RECEIVED, MAX_TILE
 
 async def aioquic_client(ca_cert: str, connection_host: str, connection_port: int):
     print("Connecting to Host", connection_host, connection_port)
@@ -58,39 +58,35 @@ async def handle_stream(reader, writer):
         frame_request = 1
 
         for row in csv_reader:
+            del row[0]
             frame_time = datetime.datetime.now()
-            not_in_fov = tiles_list.copy()
+
             # Frame to make request
             if frame == frame_request:
+                fov = []
+                for i in row:
+                    fov.append(int(i))
+
                 video_segment += 1
                 print("Client requesting segment: ", video_segment)
 
-                # SEND REQUEST FOR TILES IN FOV WITH HIGHER PRIORITY
-                index = 0
-                for tile in row:
-                    tile = int(tile)
-                    if index != 0:
-                        message = VideoPacket(video_segment, tile, HIGH_PRIORITY, 1)
-                        push_status = PUSH_RECEIVED
-                        if not segment_exists(video_segment, tile, CLIENT_BITRATE, client_id):
-                            push_status = None
+                for tile in range(1, MAX_TILE):
+                    if tile in fov:
+                        priority = HIGH_PRIORITY
+                    else:
+                        priority = LOW_PRIORITY
 
-                        await send_data(writer, stream_id=client_id, end_stream=False, packet=message, push_status=push_status)
-                        not_in_fov.remove(tile)
-                    index += 1
-
-                # REQUESTS FOR THE TILES THAT ARE NOT IN FOV WITH LOWER PRIORITY
-                for tile in not_in_fov:
-                    message = VideoPacket(video_segment, tile, LOW_PRIORITY)
+                    message = VideoPacket(video_segment, tile, priority, CLIENT_BITRATE)
                     push_status = PUSH_RECEIVED
+
                     if not segment_exists(video_segment, tile, CLIENT_BITRATE, client_id):
                         push_status = None
 
-                    await send_data(writer, stream_id=client_id, end_stream=False, packet=message, push_status=push_status)
+                    await send_data(writer, stream_id=client_id, end_stream=False, packet=message,
+                                    push_status=push_status)
                 frame_request += VIDEO_FPS
 
                 await asyncio.sleep(0.1)
-
             # CHECK FOR MISSING RATIO
             if frame != 0:
                 # Wait for the actual time of the frame
@@ -103,13 +99,10 @@ async def handle_stream(reader, writer):
                         waiting_for_time = False
 
                 # Check for missing segments
-                index = 0
                 for tile in row:
-                    if index != 0:
-                        total_frames += 1
-                        if not segment_exists(video_segment, tile, CLIENT_BITRATE, client_id):
-                            missed_frames += 1
-                    index += 1
+                    total_frames += 1
+                    if not segment_exists(video_segment, tile, CLIENT_BITRATE, client_id):
+                        missed_frames += 1
 
                 # On last segment, print the results and end connection
                 if video_segment == N_SEGMENTS:
@@ -129,6 +122,7 @@ async def receive(reader, client_id):
         file_info = message_to_VideoPacket(eval(file_name_data.decode()))
 
         file_name = get_client_file_name(segment=file_info.segment, tile=file_info.tile, bitrate=file_info.bitrate, client_id=client_id)
+        print(file_name + " - RECEIVED")
         with open(file_name, "wb") as newFile:
             not_finished = True
             while not_finished:
