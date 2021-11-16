@@ -20,14 +20,16 @@ def get_server_file_name(segment, tile, bitrate):
 def get_client_file_name(segment, tile, bitrate, client_id):
     return get_client_folder(client_id) + FILE_BASE_NAME + str(bitrate).strip() + FILE_END_NAME + str(tile).strip() + '_' + str(segment).strip() + FILE_FORMAT
 
-def segment_exists(segment, tile, bitrate, client_id):
+def client_file_exists(segment, tile, bitrate, client_id):
     return os.path.isfile(get_client_file_name(segment, tile, bitrate, client_id))
+
+def server_file_exists(file_name):
+    return os.path.isfile(file_name)
 
 def get_user_id():
     return str(int(time.time()))
 
 def create_user_dir(client_id):
-    print(get_client_folder(client_id))
     os.makedirs(get_client_folder(client_id))
 
 def get_client_folder(client_id):

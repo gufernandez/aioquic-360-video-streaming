@@ -8,7 +8,7 @@ from aioquic.asyncio import serve
 from aioquic.quic.configuration import QuicConfiguration
 from src.structures.queues import StrictPriorityQueue, WeightedFairQueue
 from src.structures.data_types import VideoRequestMessage, VideoPacket
-from src.utils import message_to_QUICPacket, get_server_file_name
+from src.utils import message_to_QUICPacket, get_server_file_name, server_file_exists
 from src.constants.video_constants import CLOSE_REQUEST, TILE_REQUEST, PUSH_REQUEST, WFQ_QUEUE, SP_QUEUE, \
     N_SEGMENTS, PUSH_CANCEL, HIGHEST_PRIORITY, PUSH_RECEIVED
 
@@ -56,6 +56,7 @@ async def receive(reader, queue):
 
             if message.end_stream:
                 message_type = CLOSE_REQUEST
+                print("End connection with ", message.stream_id)
 
                 priority = HIGHEST_PRIORITY
                 segment = 0
@@ -94,7 +95,7 @@ async def receive(reader, queue):
         except asyncio.TimeoutError:
             if is_push_allowed:
                 message_type = PUSH_REQUEST
-                if segment == last_segment:
+                if segment == last_segment and segment <= N_SEGMENTS - 1:
                     segment += 1
                     print("PUSHING SEGMENT: ", segment)
 
@@ -120,23 +121,24 @@ async def send(message: VideoRequestMessage, writer):
     video_info = VideoPacket(segment=segment, tile=tile, bitrate=bitrate)
     data = video_info.serialize()
 
-    writer.write(struct.pack('<L', len(data)))
-    writer.write(data)
-
     file_name = get_server_file_name(segment=segment, tile=tile, bitrate=bitrate)
 
-    with open(file_name, "rb") as video_file:
-        not_finished = True
-        chunk_n = 1
-        while not_finished:
-            chunk = video_file.read(1024)
-            if not chunk:
-                writer.write(struct.pack('<L', 0))
-                not_finished = False
-            else:
-                writer.write(struct.pack('<L', len(chunk)))
-                writer.write(chunk)
-                chunk_n+=1
+    if server_file_exists(file_name):
+        writer.write(struct.pack('<L', len(data)))
+        writer.write(data)
+
+        with open(file_name, "rb") as video_file:
+            not_finished = True
+            chunk_n = 1
+            while not_finished:
+                chunk = video_file.read(1024)
+                if not chunk:
+                    writer.write(struct.pack('<L', 0))
+                    not_finished = False
+                else:
+                    writer.write(struct.pack('<L', len(chunk)))
+                    writer.write(chunk)
+                    chunk_n+=1
 
 
 if __name__ == "__main__":

@@ -11,7 +11,7 @@ from aioquic.asyncio.client import connect
 from aioquic.quic.configuration import QuicConfiguration
 
 from src.structures.data_types import VideoPacket, QUICPacket
-from src.utils import message_to_VideoPacket, get_client_file_name, segment_exists, get_user_id, create_user_dir
+from src.utils import message_to_VideoPacket, get_client_file_name, client_file_exists, get_user_id, create_user_dir
 from src.constants.video_constants import HIGH_PRIORITY, FRAME_TIME_MS, LOW_PRIORITY, VIDEO_FPS, CLIENT_BITRATE, N_SEGMENTS, \
     PUSH_RECEIVED, MAX_TILE
 
@@ -79,7 +79,7 @@ async def handle_stream(reader, writer):
                     message = VideoPacket(video_segment, tile, priority, CLIENT_BITRATE)
                     push_status = PUSH_RECEIVED
 
-                    if not segment_exists(video_segment, tile, CLIENT_BITRATE, client_id):
+                    if not client_file_exists(video_segment, tile, CLIENT_BITRATE, client_id):
                         push_status = None
 
                     await send_data(writer, stream_id=client_id, end_stream=False, packet=message,
@@ -87,6 +87,7 @@ async def handle_stream(reader, writer):
                 frame_request += VIDEO_FPS
 
                 await asyncio.sleep(0.1)
+
             # CHECK FOR MISSING RATIO
             if frame != 0:
                 # Wait for the actual time of the frame
@@ -101,7 +102,8 @@ async def handle_stream(reader, writer):
                 # Check for missing segments
                 for tile in row:
                     total_frames += 1
-                    if not segment_exists(video_segment, tile, CLIENT_BITRATE, client_id):
+                    if not client_file_exists(video_segment, tile, CLIENT_BITRATE, client_id):
+                        print("Missed file: ", get_client_file_name(video_segment, tile, CLIENT_BITRATE, client_id))
                         missed_frames += 1
 
                 # On last segment, print the results and end connection
@@ -122,7 +124,7 @@ async def receive(reader, client_id):
         file_info = message_to_VideoPacket(eval(file_name_data.decode()))
 
         file_name = get_client_file_name(segment=file_info.segment, tile=file_info.tile, bitrate=file_info.bitrate, client_id=client_id)
-        print(file_name + " - RECEIVED")
+
         with open(file_name, "wb") as newFile:
             not_finished = True
             while not_finished:
