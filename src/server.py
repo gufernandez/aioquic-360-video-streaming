@@ -8,13 +8,14 @@ from aioquic.asyncio import serve
 from aioquic.quic.configuration import QuicConfiguration
 from src.structures.queues import StrictPriorityQueue, WeightedFairQueue
 from src.structures.data_types import VideoRequestMessage, VideoPacket
-from src.utils import message_to_QUICPacket, get_server_file_name, server_file_exists
+from src.utils import message_to_quic_packet, get_server_file_name, server_file_exists
 from src.constants.video_constants import CLOSE_REQUEST, TILE_REQUEST, PUSH_REQUEST, WFQ_QUEUE, SP_QUEUE, \
     N_SEGMENTS, PUSH_CANCEL, HIGHEST_PRIORITY, PUSH_RECEIVED
 
 
 def handle_stream(reader, writer):
     asyncio.ensure_future(handle_echo(reader, writer))
+
 
 async def handle_echo(reader, writer):
     closed = False
@@ -38,6 +39,7 @@ async def handle_echo(reader, writer):
         else:
             await send(video_request, writer)
 
+
 async def receive(reader, queue):
     last_segment = 1
     tiles_priority = deque()
@@ -52,7 +54,7 @@ async def receive(reader, queue):
 
             message_data = await reader.readexactly(size)
 
-            message = message_to_QUICPacket(eval(message_data.decode()))
+            message = message_to_quic_packet(eval(message_data.decode()))
 
             if message.end_stream:
                 message_type = CLOSE_REQUEST
@@ -113,6 +115,7 @@ async def receive(reader, queue):
             else:
                 queue.put_nowait(data)
 
+
 async def send(message: VideoRequestMessage, writer):
     segment = message.segment
     tile = message.tile
@@ -138,7 +141,7 @@ async def send(message: VideoRequestMessage, writer):
                 else:
                     writer.write(struct.pack('<L', len(chunk)))
                     writer.write(chunk)
-                    chunk_n+=1
+                    chunk_n += 1
 
 
 if __name__ == "__main__":

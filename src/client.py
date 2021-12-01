@@ -11,9 +11,10 @@ from aioquic.asyncio.client import connect
 from aioquic.quic.configuration import QuicConfiguration
 
 from src.structures.data_types import VideoPacket, QUICPacket
-from src.utils import message_to_VideoPacket, get_client_file_name, client_file_exists, get_user_id, create_user_dir
+from src.utils import message_to_video_packet, get_client_file_name, client_file_exists, get_user_id, create_user_dir
 from src.constants.video_constants import HIGH_PRIORITY, FRAME_TIME_MS, LOW_PRIORITY, VIDEO_FPS, CLIENT_BITRATE, N_SEGMENTS, \
     PUSH_RECEIVED, MAX_TILE
+
 
 async def aioquic_client(ca_cert: str, connection_host: str, connection_port: int):
     print("Connecting to Host", connection_host, connection_port)
@@ -21,8 +22,10 @@ async def aioquic_client(ca_cert: str, connection_host: str, connection_port: in
     configuration.load_verify_locations(ca_cert)
     async with connect(connection_host, connection_port, configuration=configuration) as client:
         connection_protocol = QuicConnectionProtocol
-        reader, writer = await connection_protocol.create_stream(client)
-        await handle_stream(reader, writer)
+        high_priority_reader, high_priority_writer = await connection_protocol.create_stream(client)
+        low_priority_reader, low_priority_writer = await connection_protocol.create_stream(client)
+        await handle_stream(high_priority_reader, high_priority_writer, low_priority_reader, low_priority_writer)
+
 
 async def send_data(writer, stream_id, end_stream, packet=None, push_status=None):
     data = QUICPacket(stream_id, end_stream, packet, push_status).serialize()
@@ -32,19 +35,20 @@ async def send_data(writer, stream_id, end_stream, packet=None, push_status=None
 
     await asyncio.sleep(0.0001)
 
-async def handle_stream(reader, writer):
+
+async def handle_stream(hp_reader, hp_writer, lp_reader, lp_writer):
     client_id = get_user_id()
     print("Starting Client: ", client_id)
     create_user_dir(client_id)
 
     # User input
-    asyncio.ensure_future(receive(reader, client_id))
+    asyncio.ensure_future(receive(hp_reader, client_id))
+    asyncio.ensure_future(receive(lp_reader, client_id))
+
     # Server data received
-    writer.write(client_id.encode())
+    hp_writer.write(client_id.encode())
     await asyncio.sleep(0.0001)
 
-    # List all tiles
-    tiles_list = list(range(1,201))
     # Missed frames
     missed_frames = 0
     # Total frames
@@ -73,8 +77,10 @@ async def handle_stream(reader, writer):
                 for tile in range(1, MAX_TILE):
                     if tile in fov:
                         priority = HIGH_PRIORITY
+                        writer_to_send = hp_writer
                     else:
                         priority = LOW_PRIORITY
+                        writer_to_send = lp_writer
 
                     message = VideoPacket(video_segment, tile, priority, CLIENT_BITRATE)
                     push_status = PUSH_RECEIVED
@@ -82,7 +88,7 @@ async def handle_stream(reader, writer):
                     if not client_file_exists(video_segment, tile, CLIENT_BITRATE, client_id):
                         push_status = None
 
-                    await send_data(writer, stream_id=client_id, end_stream=False, packet=message,
+                    await send_data(writer_to_send, stream_id=client_id, end_stream=False, packet=message,
                                     push_status=push_status)
                 frame_request += VIDEO_FPS
 
@@ -112,18 +118,21 @@ async def handle_stream(reader, writer):
                     print("Total tiles: "+str(total_frames))
                     print("Missed tiles: "+str(missed_frames))
                     print("Missing ratio: "+str(percentage)+"%")
-                    await send_data(writer, stream_id=client_id, end_stream=True)
+                    await send_data(hp_writer, stream_id=client_id, end_stream=True)
+                    await send_data(lp_writer, stream_id=client_id, end_stream=True)
                     return
 
             frame += 1
+
 
 async def receive(reader, client_id):
     while True:
         size, = struct.unpack('<L', await reader.readexactly(4))
         file_name_data = await reader.readexactly(size)
-        file_info = message_to_VideoPacket(eval(file_name_data.decode()))
+        file_info = message_to_video_packet(eval(file_name_data.decode()))
 
-        file_name = get_client_file_name(segment=file_info.segment, tile=file_info.tile, bitrate=file_info.bitrate, client_id=client_id)
+        file_name = get_client_file_name(segment=file_info.segment, tile=file_info.tile, bitrate=file_info.bitrate,
+                                         client_id=client_id)
 
         with open(file_name, "wb") as newFile:
             not_finished = True

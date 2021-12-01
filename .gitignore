@@ -131,6 +131,4 @@ dmypy.json
 .idea
 reference/
 logs/
-data/segments/
-data/client_files*
-data/video_encoding/
+data/*

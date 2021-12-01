@@ -1,10 +1,10 @@
 # File location
-CLIENT_FILE_LOCATION = '../data/client_files_'
-SERVER_FILE_LOCATION = '../data/segments/'
+CLIENT_FILE_LOCATION = './data/client_files_'
+SERVER_FILE_LOCATION = './data/segments/'
 FILE_BASE_NAME = 'video_tiled_'
 FILE_END_NAME = '_dash_track'
-CLIENT_FILE_BASE_NAME = '../data/client_files/video_tiled_dash_track'
-SERVER_FILE_BASE_NAME = '../data/segments/video_tiled_dash_track'
+CLIENT_FILE_BASE_NAME = './data/client_files/video_tiled_dash_track'
+SERVER_FILE_BASE_NAME = './data/segments/video_tiled_dash_track'
 FILE_FORMAT = '.m4s'
 
 # Video information
