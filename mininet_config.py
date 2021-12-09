@@ -58,9 +58,11 @@ def launch():
     server = hosts[0]
     client = hosts[1]
 
-    server.cmd("nohup dist/server/server -c 'cert/ssl_cert.pem' -k 'cert/ssl_key.pem' >> server_out.txt &")
-    client.cmd("dist/client/client -c 'cert/pycacert.pem' -i 'data/user_input.csv' -u 'wss://10.0.0.1:4433' -da "
-               "basic2 >> client_out.txt")
+    server.cmd("nohup python3 src/server.py -c 'cert/ssl_cert.pem' -k 'cert/ssl_key.pem' -q 'WFQ' >> server_out.txt &")
+    #server.cmd("nohup dist/server/server -c 'cert/ssl_cert.pem' -k 'cert/ssl_key.pem' >> server_out.txt &")
+
+    client.cmd("python3 src/client.py -c cert/pycacert.pem 127.0.0.1:4433 -i data/user_input.csv >> client_out.txt")
+    #client.cmd("dist/client/client -c 'cert/pycacert.pem' -i 'data/user_input.csv' -u 'wss://10.0.0.1:4433' -da basic2 >> client_out.txt")
 
     # Start CLI
     CLI(net)
