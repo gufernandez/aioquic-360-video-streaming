@@ -65,7 +65,7 @@ def launch():
 
     print("*** Running client ***\n")
     client.cmd("export PYTHONPATH=$PYTHONPATH:/root/aioquic-360-video-streaming")
-    client.cmd("python3 src/client.py -c cert/pycacert.pem 127.0.0.1:4433 -i data/user_input.csv >> client_out.txt")
+    client.cmd("python3 src/client.py -c cert/pycacert.pem 10g.0.0.1:4433 -i data/user_input.csv >> client_out.txt")
     #client.cmd("dist/client/client -c 'cert/pycacert.pem' -i 'data/user_input.csv' -u 'wss://10.0.0.1:4433' -da basic2 >> client_out.txt")
 
     # Start CLI
