@@ -31,7 +31,7 @@ class GEANTopo(Topo):
         self.addLink(switch_2, host_2)
 
         # add edges between switches
-        self.addLink(switch_1, switch_2, bw=100.0, delay='100ms')  # , loss=1)
+        self.addLink(switch_1, switch_2, bw=100.0, delay='1ms')  # , loss=1)
 
 
 topos = {'geant': GEANTopo}
@@ -59,13 +59,14 @@ def launch():
     client = hosts[1]
 
     print("*** Running server ***\n")
+    print(server.ip)
     server.cmd("export PYTHONPATH=$PYTHONPATH:/root/aioquic-360-video-streaming")
     server.cmd("nohup python3 src/server.py -c 'cert/ssl_cert.pem' -k 'cert/ssl_key.pem' -q 'WFQ' >> server_out.txt &")
     #server.cmd("nohup dist/server/server -c 'cert/ssl_cert.pem' -k 'cert/ssl_key.pem' >> server_out.txt &")
 
     print("*** Running client ***\n")
     client.cmd("export PYTHONPATH=$PYTHONPATH:/root/aioquic-360-video-streaming")
-    client.cmd("python3 src/client.py -c cert/pycacert.pem 10g.0.0.1:4433 -i data/user_input.csv >> client_out.txt")
+    client.cmd("python3 src/client.py -c cert/pycacert.pem 10.0.0.1:4433 -i data/user_input.csv >> client_out.txt")
     #client.cmd("dist/client/client -c 'cert/pycacert.pem' -i 'data/user_input.csv' -u 'wss://10.0.0.1:4433' -da basic2 >> client_out.txt")
 
     # Start CLI
