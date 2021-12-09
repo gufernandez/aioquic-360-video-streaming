@@ -1,8 +1,9 @@
 from asyncio import Queue
 import heapq
 
+
 class StrictPriorityQueue(Queue):
-    def _init(self, maxsize):
+    def _init(self):
         self._queue = []
 
     def _put(self, item, heappush=heapq.heappush):
@@ -10,6 +11,7 @@ class StrictPriorityQueue(Queue):
 
     def _get(self, heappop=heapq.heappop):
         return heappop(self._queue)[1]
+
 
 class WeightedFairQueue(Queue):
 
