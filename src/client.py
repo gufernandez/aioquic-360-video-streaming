@@ -50,9 +50,13 @@ async def handle_stream(hp_reader, hp_writer, lp_reader, lp_writer):
     await asyncio.sleep(0.0001)
 
     # Missed frames
-    missed_frames = 0
+    missed_tiles_fov = 0
+    missed_tiles_fov_per_seg = {}
     # Total frames
-    total_frames = 0
+    total_tiles_in_fov = 0
+    total_tiles_in_fov_per_seg = {}
+
+    missing_ratio = {}
 
     # USER INPUT (currently simulated by CSV)
     with open(User_Input_File) as csv_file:
@@ -73,6 +77,9 @@ async def handle_stream(hp_reader, hp_writer, lp_reader, lp_writer):
 
                 video_segment += 1
                 print("Client requesting segment: ", video_segment)
+
+                missed_tiles_fov_per_seg[video_segment] = 0
+                total_tiles_in_fov_per_seg[video_segment] = 0
 
                 for tile in range(1, MAX_TILE):
                     if tile in fov:
@@ -107,17 +114,23 @@ async def handle_stream(hp_reader, hp_writer, lp_reader, lp_writer):
 
                 # Check for missing segments
                 for tile in row:
-                    total_frames += 1
+                    total_tiles_in_fov += 1
                     if not client_file_exists(video_segment, tile, CLIENT_BITRATE, client_id):
-                        print("Missed file: ", get_client_file_name(video_segment, tile, CLIENT_BITRATE, client_id))
-                        missed_frames += 1
+                        missed_tiles_fov += 1
+
+                total_tiles_in_fov_per_seg[video_segment] = total_tiles_in_fov
+                missed_tiles_fov_per_seg[video_segment] = missed_tiles_fov
 
                 # On last segment, print the results and end connection
                 if video_segment == N_SEGMENTS:
-                    percentage = round((missed_frames/total_frames)*100, 2)
-                    print("Total tiles: "+str(total_frames))
-                    print("Missed tiles: "+str(missed_frames))
+                    percentage = round((missed_tiles_fov/total_tiles_in_fov)*100, 2)
+                    for i in range(1, N_SEGMENTS):
+                        missing_ratio[i] = str(round((missed_tiles_fov_per_seg[i] / total_tiles_in_fov_per_seg[i]) * 100, 2)) + "%"
+
+                    print("Total tiles: "+str(total_tiles_in_fov))
+                    print("Missed tiles: "+str(missed_tiles_fov))
                     print("Missing ratio: "+str(percentage)+"%")
+                    print("Missing ratio per segment: "+str(missing_ratio))
                     await send_data(hp_writer, stream_id=client_id, end_stream=True)
                     await send_data(lp_writer, stream_id=client_id, end_stream=True)
                     return

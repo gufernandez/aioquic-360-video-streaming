@@ -59,7 +59,6 @@ def launch():
     client = hosts[1]
 
     print("*** Running server ***\n")
-    print(server.ip)
     server.cmd("export PYTHONPATH=$PYTHONPATH:/root/aioquic-360-video-streaming")
     server.cmd("nohup python3 src/server.py -c 'cert/ssl_cert.pem' -k 'cert/ssl_key.pem' -q 'WFQ' >> server_out.txt &")
     #server.cmd("nohup dist/server/server -c 'cert/ssl_cert.pem' -k 'cert/ssl_key.pem' >> server_out.txt &")
