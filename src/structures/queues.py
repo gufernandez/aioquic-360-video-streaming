@@ -3,7 +3,7 @@ import heapq
 
 
 class StrictPriorityQueue(Queue):
-    def _init(self):
+    def _init(self, maxsize):
         self._queue = []
 
     def _put(self, item, heappush=heapq.heappush):
