@@ -147,6 +147,9 @@ async def receive(reader, client_id):
         file_name = get_client_file_name(segment=file_info.segment, tile=file_info.tile, bitrate=file_info.bitrate,
                                          client_id=client_id)
 
+        if Client_Log:
+            print("Receiving file:", file_name)
+
         with open(file_name, "wb") as newFile:
             not_finished = True
             while not_finished:
@@ -177,7 +180,18 @@ if __name__ == "__main__":
         type=str,
         help="CSV file with user input simulation",
     )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        help="increase output verbosity",
+        action="store_true"
+    )
+
     args = parser.parse_args()
+
+    global Client_Log
+    if args.verbose:
+        Client_Log = True
 
     global User_Input_File
     User_Input_File = args.user_input
