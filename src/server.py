@@ -127,6 +127,8 @@ async def send(message: VideoRequestMessage, writer):
     file_name = get_server_file_name(segment=segment, tile=tile, bitrate=bitrate)
 
     if server_file_exists(file_name):
+        if Server_Log:
+            print("Sending file: ", file_name)
         writer.write(struct.pack('<L', len(data)))
         writer.write(data)
 
@@ -142,6 +144,8 @@ async def send(message: VideoRequestMessage, writer):
                     writer.write(struct.pack('<L', len(chunk)))
                     writer.write(chunk)
                     chunk_n += 1
+    elif Server_Log:
+        print("Couldn't find file:", file_name)
 
 
 if __name__ == "__main__":
@@ -180,7 +184,18 @@ if __name__ == "__main__":
         default="FIFO",
         help="the type of Queuing used by the server",
     )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        help="increase output verbosity",
+        action="store_true"
+    )
+
     args = parser.parse_args()
+
+    global Server_Log
+    if args.verbose:
+        Server_Log = True
 
     global Queue_Type
     Queue_Type = args.queue
