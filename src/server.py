@@ -117,6 +117,7 @@ async def receive(reader, queue):
 
 
 async def send(message: VideoRequestMessage, writer):
+    global Server_Log
     segment = message.segment
     tile = message.tile
     bitrate = message.bitrate
