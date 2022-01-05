@@ -18,11 +18,11 @@ def message_to_video_packet(data):
 
 
 def get_server_file_name(segment, tile, bitrate):
-    return SERVER_FILE_LOCATION + FILE_BASE_NAME + str(bitrate).strip() + FILE_END_NAME + str(tile).strip() + '_' + str(segment).strip() + FILE_FORMAT
+    return SERVER_FILE_LOCATION + FILE_BASE_NAME + str(int(bitrate)).strip() + FILE_END_NAME + str(tile).strip() + '_' + str(segment).strip() + FILE_FORMAT
 
 
 def get_client_file_name(segment, tile, bitrate, client_id):
-    return get_client_folder(client_id) + FILE_BASE_NAME + str(bitrate).strip() + FILE_END_NAME + str(tile).strip() + '_' + str(segment).strip() + FILE_FORMAT
+    return get_client_folder(client_id) + FILE_BASE_NAME + str(int(bitrate)).strip() + FILE_END_NAME + str(tile).strip() + '_' + str(segment).strip() + FILE_FORMAT
 
 
 def client_file_exists(segment, tile, bitrate, client_id):
