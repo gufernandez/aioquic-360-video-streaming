@@ -274,8 +274,8 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    if args.verbose:
-        Client_Log = True
+    global Client_Log
+    Client_Log = args.verbose
 
     global User_Input_File
     User_Input_File = args.user_input

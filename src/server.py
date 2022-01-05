@@ -45,7 +45,8 @@ async def receive(reader, queue):
     tiles_priority = deque()
     segment = 1
     closed = False
-    is_push_allowed = False
+
+    is_push_allowed = Server_Push
 
     while not closed:
         try:
@@ -92,7 +93,6 @@ async def receive(reader, queue):
                         print("STARTED SENDING SEGMENT: ", segment)
 
                 tiles_priority.appendleft((priority, tile, bitrate))
-                is_push_allowed = True
 
         except asyncio.TimeoutError:
             if is_push_allowed:
@@ -191,15 +191,23 @@ if __name__ == "__main__":
         help="increase output verbosity",
         action="store_true"
     )
+    parser.add_argument(
+        "-p",
+        "--push",
+        help="enable server push",
+        action="store_true"
+    )
 
     args = parser.parse_args()
 
     global Server_Log
-    if args.verbose:
-        Server_Log = True
+    Server_Log = args.verbose
 
     global Queue_Type
     Queue_Type = args.queue
+
+    global Server_Push
+    Server_Push = args.push
 
     configuration = QuicConfiguration(
         is_client=False,
