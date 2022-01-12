@@ -3,6 +3,7 @@ BASIC_THRESHOLD = 10
 BASIC_UPPER_THRESHOLD = 1.2
 BASIC_DELTA_COUNT = 5
 
+
 class Dash():
     def __init__(self, bitrates, algorithm):
         self.algorithm = algorithm
@@ -29,9 +30,9 @@ class Dash():
         self.recent_download_sizes.append(download_size)
 
     def get_next_bitrate(self, segment_number):
-        if (self.algorithm=='basic2'):
+        if self.algorithm == 'basic2':
             return self.basic_dash2(segment_number)
-        elif (self.algorithm=='basic'):
+        elif self.algorithm == 'basic':
             return self.basic_dash(segment_number)
         else:
             return self.current_bitrate
@@ -41,7 +42,6 @@ class Dash():
             updated_dwn_time = (self.average_dwn_time * (segment_number + 1) + self.segment_download_time) / (segment_number + 1)
         else:
             updated_dwn_time = self.segment_download_time
-
 
         bitrates = [float(i) for i in self.bitrates]
         bitrates.sort()
@@ -83,7 +83,6 @@ class Dash():
         self.current_bitrate = next_rate
         return next_rate
 
-    
     def basic_dash2(self, segment_number):
 
         # Truncating the list of download times and segment 
@@ -135,3 +134,8 @@ class Dash():
         self.average_dwn_time = updated_dwn_time
         self.current_bitrate = next_rate
         return next_rate
+
+    def get_max_bitrate(self):
+        self.current_bitrate = self.bitrates[-1]
+
+        return self.current_bitrate

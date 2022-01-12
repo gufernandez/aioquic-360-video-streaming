@@ -12,6 +12,9 @@ class StrictPriorityQueue(Queue):
     def _get(self, heappop=heapq.heappop):
         return heappop(self._queue)[1]
 
+    def get_queue_size(self):
+        return len(self._queue)
+
 
 class WeightedFairQueue(Queue):
 
@@ -57,7 +60,7 @@ class WeightedFairQueue(Queue):
     def _get(self, heappop=heapq.heappop):
         return heappop(self._queue)[1]
 
-    def get_active_min_F(self):
+    def get_active_min_f(self):
         try:
             first_active = self.active.index(True)
         except ValueError:
@@ -85,7 +88,7 @@ class WeightedFairQueue(Queue):
         updated = False
 
         while not updated and total_weight > 0:
-            min_f = self.get_active_min_F()
+            min_f = self.get_active_min_f()
             if min_f == -1:
                 exit()
             idle_time = self.time - self.last_time

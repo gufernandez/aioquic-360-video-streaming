@@ -2,7 +2,8 @@ import os
 import time
 
 from src.structures.data_types import QUICPacket, VideoPacket
-from src.constants.video_constants import SERVER_FILE_LOCATION, FILE_BASE_NAME, FILE_END_NAME, FILE_FORMAT, CLIENT_FILE_LOCATION
+from src.constants.video_constants import SERVER_FILE_LOCATION, FILE_BASE_NAME, FILE_END_NAME, FILE_FORMAT, \
+    CLIENT_FILE_LOCATION, CLIENT_BITRATES
 
 
 def message_to_quic_packet(data):
@@ -25,7 +26,15 @@ def get_client_file_name(segment, tile, bitrate, client_id):
     return get_client_folder(client_id) + FILE_BASE_NAME + str(int(bitrate)).strip() + FILE_END_NAME + str(tile).strip() + '_' + str(segment).strip() + FILE_FORMAT
 
 
-def client_file_exists(segment, tile, bitrate, client_id):
+def client_file_exists(segment, tile, client_id):
+    for bitrate in CLIENT_BITRATES:
+        if client_file_with_bitrate_exists(segment, tile, bitrate, client_id):
+            return True
+
+    return False
+
+
+def client_file_with_bitrate_exists(segment, tile, bitrate, client_id):
     return os.path.isfile(get_client_file_name(segment, tile, bitrate, client_id))
 
 

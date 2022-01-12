@@ -12,6 +12,7 @@ class VideoPacket:
         message = self.get_list()
         return str(message).encode()
 
+
 class QUICPacket:
     def __init__(self, stream_id, end_stream, video_packet=None, push_status=None):
         self.stream_id = stream_id
@@ -29,6 +30,7 @@ class QUICPacket:
             message += self.push_status
 
         return str(message).encode()
+
 
 class VideoRequestMessage:
     def __init__(self, message_type, segment, tile, bitrate):
