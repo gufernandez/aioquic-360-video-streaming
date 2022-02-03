@@ -14,13 +14,13 @@ from aioquic.quic.configuration import QuicConfiguration
 from src.dash import Dash
 
 from src.structures.data_types import VideoPacket, QUICPacket
-from src.utils import message_to_video_packet, get_client_file_name, client_file_exists, get_user_id, create_user_dir, \
-    client_file_with_bitrate_exists
+from src.utils import message_to_video_packet, get_client_file_name, get_user_id, create_user_dir
 from src.constants.video_constants import HIGH_PRIORITY, FRAME_TIME_MS, LOW_PRIORITY, VIDEO_FPS, CLIENT_BITRATES, \
     N_SEGMENTS, PUSH_RECEIVED, MAX_TILE, INITIAL_BUFFER_SIZE
 
 last_segment = 1
 Client_Log = False
+received_files = [[False for x in range(N_SEGMENTS)] for y in range(MAX_TILE)]
 
 
 async def aioquic_client(ca_cert: str, connection_host: str, connection_port: int, dash: Dash):
@@ -57,7 +57,8 @@ async def handle_stream(hp_reader, hp_writer, lp_reader, lp_writer, dash):
     await asyncio.sleep(0.0001)
 
     # List all tiles
-    tiles_list = list(range(1, 201))
+    tiles_list = list(range(1, MAX_TILE))
+
     # Total frames
     total_frames = 0
     total_frames_fov = 0
@@ -89,8 +90,9 @@ async def handle_stream(hp_reader, hp_writer, lp_reader, lp_writer, dash):
         for tile in range(1, MAX_TILE):
             tile_exists = False
             while not tile_exists:
-                tile_exists = client_file_with_bitrate_exists(buffer_segment, tile, current_bitrate, client_id)
+                tile_exists = received_files[tile-1][buffer_segment-1]
                 await asyncio.sleep(0.01)
+
     print("Initial buffer complete.")
 
     # User input obtained from CSV file
@@ -105,7 +107,7 @@ async def handle_stream(hp_reader, hp_writer, lp_reader, lp_writer, dash):
             frame_time = datetime.datetime.now()
 
             # Frame to make request
-            if frame == frame_request:
+            if frame == frame_request and video_segment < N_SEGMENTS:
                 fov = []
                 for i in row:
                     fov.append(int(i))
@@ -122,7 +124,7 @@ async def handle_stream(hp_reader, hp_writer, lp_reader, lp_writer, dash):
                 print("Client requesting segment: ", video_segment)
 
                 for tile in range(1, MAX_TILE):
-                    if not client_file_exists(video_segment, tile, client_id):
+                    if not received_files[tile-1][video_segment-1]:
                         if tile in fov:
                             priority = HIGH_PRIORITY
                             writer_to_send = hp_writer
@@ -171,7 +173,7 @@ async def handle_stream(hp_reader, hp_writer, lp_reader, lp_writer, dash):
                         total_tiles_fov +=1
                         in_row = True
 
-                    if not client_file_exists(video_segment, tile, client_id):
+                    if not received_files[tile-1][video_segment-1]:
                         missed_tiles += 1
                         if in_row:
                             missed_tiles_fov += 1
@@ -224,6 +226,7 @@ async def handle_stream(hp_reader, hp_writer, lp_reader, lp_writer, dash):
 async def receive(reader, client_id, dash):
     global last_segment
     global Client_Log
+    global received_files
 
     current_segment = 0
 
@@ -251,6 +254,8 @@ async def receive(reader, client_id, dash):
                     newFile.write(binascii.hexlify(chunk))
 
         last_segment = file_info.segment
+
+        received_files[file_info.tile-1][file_info.segment-1] = True
 
         if Client_Log and current_segment != last_segment:
             current_segment += 1
