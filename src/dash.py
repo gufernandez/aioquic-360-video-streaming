@@ -139,3 +139,8 @@ class Dash():
         self.current_bitrate = self.bitrates[-1]
 
         return self.current_bitrate
+
+    def get_min_bitrate(self):
+        self.current_bitrate = self.bitrates[0]
+
+        return self.current_bitrate

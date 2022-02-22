@@ -6,6 +6,7 @@ import struct
 import datetime
 import timeit
 import time
+import math
 from urllib.parse import urlparse
 
 from aioquic.asyncio import QuicConnectionProtocol
@@ -21,7 +22,8 @@ from src.constants.video_constants import HIGH_PRIORITY, FRAME_TIME_MS, LOW_PRIO
 last_segment = 1
 Client_Log = False
 received_files = [[False for x in range(N_SEGMENTS)] for y in range(MAX_TILE)]
-
+waiting_for_buffer = True
+downloaded_time = 0 
 
 async def aioquic_client(ca_cert: str, connection_host: str, connection_port: int, dash: Dash):
     print("Connecting to Host", connection_host, connection_port)
@@ -44,6 +46,8 @@ async def send_data(writer, stream_id, end_stream, packet=None, push_status=None
 
 
 async def handle_stream(hp_reader, hp_writer, lp_reader, lp_writer, dash):
+    global waiting_for_buffer
+
     client_id = get_user_id()
     print("Starting Client: ", client_id)
     create_user_dir(client_id)
@@ -94,6 +98,9 @@ async def handle_stream(hp_reader, hp_writer, lp_reader, lp_writer, dash):
                 await asyncio.sleep(0.01)
 
     print("Initial buffer complete.")
+    waiting_for_buffer = False
+
+    asyncio.ensure_future(play(dash, hp_writer, client_id))
 
     # User input obtained from CSV file
     with open(User_Input_File) as csv_file:
@@ -120,6 +127,10 @@ async def handle_stream(hp_reader, hp_writer, lp_reader, lp_writer, dash):
                 total_frames_seg_fov[video_segment] = 0
 
                 current_bitrate = dash.get_next_bitrate(video_segment)
+
+                while (waiting_for_buffer==True):
+                    await asyncio.sleep(0.5)
+                    print("Waiting for the buffer to fill...")
 
                 print("Client requesting segment: ", video_segment)
 
@@ -227,6 +238,7 @@ async def receive(reader, client_id, dash):
     global last_segment
     global Client_Log
     global received_files
+    global downloaded_time
 
     current_segment = 0
 
@@ -256,14 +268,59 @@ async def receive(reader, client_id, dash):
         last_segment = file_info.segment
 
         received_files[file_info.tile-1][file_info.segment-1] = True
+        
+        downloaded_time += 1/200  
 
         if Client_Log and current_segment != last_segment:
-            current_segment += 1
             print("Receiving segment:", current_segment)
         elif Client_Log:
             print("Receiving file:", file_name)
 
         dash.update_download_time(timeit.default_timer() - start_time, int(file_info.segment))
+
+async def play(dash, hp_writer, client_id):
+    global downloaded_time
+    global waiting_for_buffer
+
+    start_time = datetime.datetime.now()
+    stopped_time = start_time - start_time
+    while downloaded_time<N_SEGMENTS:
+        delta = datetime.datetime.now()
+        played_time = delta - start_time - stopped_time
+        print("Buffer: "+'{0:.2f}'.format(played_time.seconds)+"s/"+'{0:.2f}'.format(downloaded_time)+"s")
+        if (played_time.seconds>downloaded_time):
+            waiting_for_buffer = True
+            await fill_buffer(round(downloaded_time), dash, hp_writer, client_id)
+            waiting_for_buffer = False
+            stopped_time+=datetime.datetime.now()-delta
+
+        await asyncio.sleep(0.5)
+
+                
+async def fill_buffer(current_segment, dash, hp_writer, client_id):
+    
+    start_segment = current_segment
+    end_segment = min(N_SEGMENTS, current_segment+INITIAL_BUFFER_SIZE)
+
+    print("Filling buffer from segment "+str(start_segment)+" to segment "+str(end_segment))
+
+    for buffer_segment in range(start_segment, end_segment):
+        if Client_Log:
+            print("Request segment ", buffer_segment)
+
+        current_bitrate = dash.get_max_bitrate()
+        for tile in range(1, MAX_TILE):
+            message = VideoPacket(buffer_segment, tile, HIGH_PRIORITY, current_bitrate)
+
+            await send_data(hp_writer, stream_id=client_id, end_stream=False, packet=message)
+
+        for tile in range(1, MAX_TILE):
+            tile_exists = False
+            while not tile_exists:
+                tile_exists = received_files[tile-1][buffer_segment-1]
+                await asyncio.sleep(0.01)
+    return
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="HTTP/3 client for video streaming")
