@@ -72,12 +72,16 @@ def launch():
     iperf_port = "5002"
     server.cmd("iperf3 -s -p " + iperf_port + "&")
 
-    alternating_time_s = "25"
-    iperf_consume = "99M"
-    print("*** Running iPerf client using "+iperf_consume+"Bps every "+alternating_time_s+"s ***\n")
+    constant_duration = "25"
+    constant_traffic = "5M"
+    peek_duration = "20"
+    peek_traffic = "99M"
+
+    print("*** Running iPerf client with constant traffic of "+constant_traffic+"Bps ***\n")
     client.cmd("chmod 755 iperf_client_script.sh")
-    print(client.cmd("./iperf_client_script.sh "+alternating_time_s+" "+server.IP()+" "+iperf_port+" "+client_pid + " "
-                     + iperf_consume))
+    iperf_params = [server.IP(), iperf_port, client_pid, constant_duration, constant_traffic,
+                    peek_duration, peek_traffic]
+    print(client.cmd("./iperf_client_script.sh "+" ".join(iperf_params)))
 
     print("*** Stopping Mininet ***")
     net.stop()
