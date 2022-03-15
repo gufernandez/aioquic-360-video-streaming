@@ -74,6 +74,7 @@ def launch():
 
     print("*** Running iPerf client ***\n")
     alternating_time_s = "5"
+    client.cmd("chmod 755 iperf_client_script.sh")
     print(client.cmd("./iperf_client_script.sh "+alternating_time_s+" "+server.IP()+" "+iperf_port+" "+client_pid))
 
     # Start CLI
