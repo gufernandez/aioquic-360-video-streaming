@@ -68,13 +68,13 @@ def launch():
                                                                          ">> client_out.txt &")
     client_pid = client.cmd("echo $!")
 
-    print("*** Running iPerf server ***\n")
+    print("*** Running iPerf server: "+server.IP()+" ***\n")
     iperf_port = "5002"
     server.cmd("iperf3 -s -p " + iperf_port + "&")
 
-    print("*** Running iPerf client ***\n")
     alternating_time_s = "25"
-    iperf_consume = "99m"
+    iperf_consume = "99M"
+    print("*** Running iPerf client using "+iperf_consume+"Bps for "+alternating_time_s+"s ***\n")
     client.cmd("chmod 755 iperf_client_script.sh")
     print(client.cmd("./iperf_client_script.sh "+alternating_time_s+" "+server.IP()+" "+iperf_port+" "+client_pid + " "
                      + iperf_consume))
