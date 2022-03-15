@@ -74,7 +74,7 @@ def launch():
 
     alternating_time_s = "25"
     iperf_consume = "99M"
-    print("*** Running iPerf client using "+iperf_consume+"Bps for "+alternating_time_s+"s ***\n")
+    print("*** Running iPerf client using "+iperf_consume+"Bps every "+alternating_time_s+"s ***\n")
     client.cmd("chmod 755 iperf_client_script.sh")
     print(client.cmd("./iperf_client_script.sh "+alternating_time_s+" "+server.IP()+" "+iperf_port+" "+client_pid + " "
                      + iperf_consume))
