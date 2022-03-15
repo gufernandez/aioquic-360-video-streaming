@@ -33,7 +33,7 @@ is_client_running() {
 }
 
 echo "--- Starting iPerf script ---"
-echo "Constant traffic: ${BASE_BW}Bps"
+echo "Constant traffic: ${CONSTANT_TRAFFIC}Bps"
 is_running=1
 
 # Check parameters
@@ -43,13 +43,13 @@ if [ -z "$PEEK_DURATION" ]; then
     exit
   fi
 else
-  echo "Change to ${PEEK_TRAFFIC}Bps every ${ALT_TIME}s"
+  echo "Change to ${PEEK_TRAFFIC}Bps after ${PEEK_DURATION}s"
 fi
 
 # While client is running run the iPerf
 while [ $is_running -eq 1 ]; do
   # Constant traffic
-  if [ "$CONSTANT_TRAFFIC" -eq 0 ]; then
+  if [ "$CONSTANT_TRAFFIC" == "0" ]; then
     sleep "$CONSTANT_DURATION"
   else
     run_iperf_for "$CONSTANT_DURATION" "$CONSTANT_TRAFFIC"

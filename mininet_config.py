@@ -79,8 +79,7 @@ def launch():
 
     print("*** Running iPerf client with constant traffic of "+constant_traffic+"Bps ***\n")
     client.cmd("chmod 755 iperf_client_script.sh")
-    iperf_params = [server.IP(), iperf_port, client_pid, constant_duration, constant_traffic,
-                    peek_duration, peek_traffic]
+    iperf_params = [server.IP(), iperf_port, client_pid, constant_duration, constant_traffic, peek_duration, peek_traffic]
     print(client.cmd("./iperf_client_script.sh "+" ".join(iperf_params)))
 
     print("*** Stopping Mininet ***")
