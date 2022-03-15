@@ -25,11 +25,17 @@ run_iperf_for () {
 
 # Check if client PID is still running
 is_client_running() {
-  if test -d /proc/"$CLIENT_PID"/; then
+  check=$(run_ps)
+  if [ -n "$check" ]; then
     echo 1
   else
     echo 0
   fi
+}
+
+run_ps() {
+  result=$(ps -p "$CLIENT_PID" | grep bash)
+  echo "$result"
 }
 
 echo "--- Starting iPerf script ---"
@@ -43,7 +49,7 @@ if [ -z "$PEEK_DURATION" ]; then
     exit
   fi
 else
-  echo "Change to ${PEEK_TRAFFIC}Bps after ${PEEK_DURATION}s"
+  echo "After ${CONSTANT_DURATION}s change to ${PEEK_TRAFFIC}Bps during ${PEEK_DURATION}s"
 fi
 
 # While client is running run the iPerf
