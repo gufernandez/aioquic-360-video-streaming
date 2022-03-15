@@ -15,7 +15,7 @@ from aioquic.quic.configuration import QuicConfiguration
 from src.dash import Dash
 
 from src.structures.data_types import VideoPacket, QUICPacket
-from src.utils import message_to_video_packet, get_client_file_name, get_user_id, create_user_dir
+from src.utils import message_to_video_packet, get_client_file_name, get_user_id, create_user_dir, host_parser
 from src.constants.video_constants import HIGH_PRIORITY, FRAME_TIME_MS, LOW_PRIORITY, VIDEO_FPS, CLIENT_BITRATES, \
     N_SEGMENTS, PUSH_RECEIVED, MAX_TILE, INITIAL_BUFFER_SIZE
 
@@ -363,12 +363,10 @@ if __name__ == "__main__":
 
     User_Input_File = args.user_input
     
-    parsed = urlparse(args.url)
-    host = parsed.hostname
+    host, port = host_parser(args.url)
+    print(host)
 
-    if parsed.port is not None:
-        port = parsed.port
-    else:
+    if port is None:
         port = 4433
 
     dash = Dash(CLIENT_BITRATES, args.dash_algorithm)

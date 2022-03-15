@@ -30,7 +30,6 @@ def client_file_exists(segment, tile, client_id):
     for bitrate in CLIENT_BITRATES:
         if client_file_with_bitrate_exists(segment, tile, bitrate, client_id):
             return True
-
     return False
 
 
@@ -52,3 +51,10 @@ def create_user_dir(client_id):
 
 def get_client_folder(client_id):
     return CLIENT_FILE_LOCATION + client_id + '/'
+
+
+def host_parser(url):
+    result = url.split(':')
+    if len(result) == 1:
+        return result, None
+    return result
