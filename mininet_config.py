@@ -58,11 +58,11 @@ def launch():
     server = hosts[0]
     client = hosts[1]
 
-    print("*** Running server ***\n")
+    print("*** Running server: "+server.IP()+" ***\n")
     server.cmd("export PYTHONPATH=$PYTHONPATH:/root/aioquic-360-video-streaming")
     server.cmd("python3 src/server.py -c cert/ssl_cert.pem -k cert/ssl_key.pem -q 'WFQ' -p &")
 
-    print("*** Running client ***\n")
+    print("*** Running client: "+client.IP()+" ***\n")
     client.cmd("export PYTHONPATH=$PYTHONPATH:/root/aioquic-360-video-streaming")
     client.cmd("python3 src/client.py -c cert/pycacert.pem "+server.IP()+":4433 -i data/user_input.csv "
                                                                          ">> client_out.txt &")
@@ -74,7 +74,7 @@ def launch():
 
     print("*** Running iPerf client ***\n")
     alternating_time_s = "5"
-    client.cmd("./iperf_client_script.sh "+alternating_time_s+" "+server.IP()+" "+iperf_port+" "+client_pid)
+    print(client.cmd("./iperf_client_script.sh "+alternating_time_s+" "+server.IP()+" "+iperf_port+" "+client_pid))
 
     # Start CLI
     # CLI(net)
