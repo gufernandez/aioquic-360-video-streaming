@@ -14,6 +14,7 @@ run_iperf_for () {
 
 # Check if client PID is still running
 is_client_running() {
+  echo "Checking if client is still running"
   local result
   result=$(ps --pid "$CLIENT_PID" || grep "$CLIENT_PID")
 
@@ -24,6 +25,7 @@ is_client_running() {
   fi
 }
 
+echo "Starting iPerf script"
 # While client is running run the iPerf
 while is_client_running; do
   run_iperf_for "$ALT_TIME"
