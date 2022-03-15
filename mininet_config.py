@@ -72,10 +72,10 @@ def launch():
     iperf_port = "5002"
     server.cmd("iperf3 -s -p " + iperf_port + "&")
 
-    constant_duration = "25"
+    constant_duration = 25
     constant_traffic = "5M"
-    peek_duration = "20"
-    peek_traffic = "99M"
+    peek_duration = 20
+    peek_traffic = "70M"
 
     print("*** Running iPerf client with constant traffic of "+constant_traffic+"Bps ***\n")
     client.cmd("chmod 755 iperf_client_script.sh")

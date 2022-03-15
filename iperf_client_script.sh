@@ -34,7 +34,7 @@ is_client_running() {
 }
 
 run_ps() {
-  result=$(ps -p "$CLIENT_PID" | grep bash)
+  result=$(ps -p "$CLIENT_PID" | grep python3)
   echo "$result"
 }
 
