@@ -73,12 +73,11 @@ def launch():
     server.cmd("iperf3 -s -p " + iperf_port + "&")
 
     print("*** Running iPerf client ***\n")
-    alternating_time_s = "5"
+    alternating_time_s = "25"
+    iperf_consume = "99m"
     client.cmd("chmod 755 iperf_client_script.sh")
-    print(client.cmd("./iperf_client_script.sh "+alternating_time_s+" "+server.IP()+" "+iperf_port+" "+client_pid))
-
-    # Start CLI
-    # CLI(net)
+    print(client.cmd("./iperf_client_script.sh "+alternating_time_s+" "+server.IP()+" "+iperf_port+" "+client_pid + " "
+                     + iperf_consume))
 
     print("*** Stopping Mininet ***")
     net.stop()

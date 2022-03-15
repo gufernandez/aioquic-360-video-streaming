@@ -4,7 +4,7 @@ ALT_TIME="$1"
 SERVER_IP="$2"
 IPERF_PORT="$3"
 CLIENT_PID="$4"
-BYTES_T="150k"
+BYTES_T="$5"
 
 # Run IPERF Command
 run_iperf_for () {
@@ -25,8 +25,8 @@ echo "Starting iPerf script"
 is_running=1
 # While client is running run the iPerf
 while [ $is_running -eq 1 ]; do
-  run_iperf_for "$ALT_TIME"
   sleep "$ALT_TIME"
+  run_iperf_for "$ALT_TIME"
   echo "Check if client is still running"
   is_running="$(is_client_running)"
 done
