@@ -94,7 +94,7 @@ def launch(exec_id: str, mininet_bw: float, mininet_delay: str, server_queue: st
     optional_params = ""
     if iperf_peek_duration != 0 and iperf_peek_traffic != "0":
         optional_params = " ".join([str(iperf_peek_duration), iperf_peek_traffic])
-    iperf_command = "./iperf_client_script.sh "+iperf_params+optional_params+" > out/"\
+    iperf_command = "./iperf_client_script.sh "+iperf_params+" "+optional_params+" > out/"\
                     + exec_id + "-iperf_client_out.txt &"
     print("Running command: ", iperf_command)
     client.cmd(iperf_command)
