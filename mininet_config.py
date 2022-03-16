@@ -99,7 +99,7 @@ def launch():
 
     is_running = True
     while is_running:
-        process_command = "pgrep python3 -s "+ client_pid
+        process_command = "pgrep -s " + client_pid
         print(process_command)
         process = client.cmd(process_command)
         print(process)
@@ -113,7 +113,6 @@ def launch():
 def get_last_pid(host):
     pid = host.cmd("echo $!")
     result = re.findall(r'\d+', pid)
-    print(result)
     return result[0]
 
 

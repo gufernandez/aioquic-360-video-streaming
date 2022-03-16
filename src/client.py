@@ -369,7 +369,7 @@ if __name__ == "__main__":
     if port is None:
         port = 4433
 
-    dash = Dash(CLIENT_BITRATES, args.dash_algorithm)
+    user_dash = Dash(CLIENT_BITRATES, args.dash_algorithm)
 
     asyncio.get_event_loop().run_until_complete(aioquic_client(ca_cert=args.ca_certs, connection_host=host,
-                                                               connection_port=port, dash=dash))
+                                                               connection_port=port, dash_algorithm=user_dash))
