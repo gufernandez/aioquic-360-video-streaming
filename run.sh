@@ -21,13 +21,13 @@ id=1
 bw=100.00
 delay="1ms"
 queue="FIFO"
-push=true
+push=0
 dash="basic"
 bg_d=30
 bg_t="5M"
 peek_d=20
 peek_t="80M"
-printf "Execução %d. BW: %f, Delay: %s, Queuing: %s, Push: %s" "$id" "$bw" "$delay" "$queue" "$push"
+printf "Execução %d. BW: %f, Delay: %s, Queuing: %s, Push: %d" "$id" "$bw" "$delay" "$queue" "$push"
 printf ", Dash: %s, BG Duration: %d, BG Traffic: %s" "$dash" "$bg_d" "$bg_t"
 printf ", Peek Duration: %d, Peek Traffic: %s\n" "$peek_d" "$peek_t"
 
