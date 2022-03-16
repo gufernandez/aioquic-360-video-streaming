@@ -40,7 +40,7 @@ Example:
 ### 1. SSH
 Access the simulation environment using the ssh command and certificate.
 
-`$ ssh -i CERT_FILE IP_ADDRESS:PORT`
+`$ ssh -i CERT_FILE root@IP_ADDRESS`
 
 ### 2. Setup
 Go the project folder.
