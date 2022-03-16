@@ -90,10 +90,10 @@ def launch(mininet_bw: float, mininet_delay: str, server_queue: str, server_push
 
     print("*** Running iPerf client with constant traffic of "+iperf_const_traffic+"Bps ***\n")
     client.cmd("chmod 755 iperf_client_script.sh")
-    iperf_params = " ".join([server.IP(), iperf_port, iperf_const_duration, iperf_const_traffic])
+    iperf_params = " ".join([server.IP(), iperf_port, str(iperf_const_duration), iperf_const_traffic])
     optional_params = ""
     if iperf_peek_duration == 0 or iperf_peek_traffic == "0":
-        optional_params = " ".join([iperf_peek_duration, iperf_peek_traffic])
+        optional_params = " ".join([str(iperf_peek_duration), iperf_peek_traffic])
     iperf_command = "./iperf_client_script.sh "+iperf_params+optional_params+" >> out/iperf_client_out.txt &"
     print("Running command: ", iperf_command)
     client.cmd(iperf_command)
