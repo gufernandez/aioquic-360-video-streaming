@@ -31,4 +31,4 @@ printf "Execução %d. BW: %f, Delay: %s, Queuing: %s, Push: %s" "$id" "$bw" "$d
 printf ", Dash: %s, BG Duration: %d, BG Traffic: %s" "$dash" "$bg_d" "$bg_t"
 printf ", Peek Duration: %d, Peek Traffic: %s\n" "$peek_d" "$peek_t"
 
-python3 mininet_config.py -id ${id} -mb ${bw} -md ${delay} -sq ${queue} -sp ${push} -da ${dash} -bd ${bg_d} -bt ${bg_t} -pd ${peek_d} -pt ${peek_t} > out/${id}-exec.txt
+python3 mininet_config.py -id ${id} -mb ${bw} -md ${delay} -sq ${queue} -sp ${push} -da ${dash} -bd ${bg_d} -bt ${bg_t} -pd ${peek_d} -pt ${peek_t} > out/${id}-exec.txt 2>&1
