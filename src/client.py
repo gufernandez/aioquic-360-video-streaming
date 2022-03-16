@@ -5,9 +5,6 @@ import csv
 import struct
 import datetime
 import timeit
-import time
-import math
-from urllib.parse import urlparse
 
 from aioquic.asyncio import QuicConnectionProtocol
 from aioquic.asyncio.client import connect
@@ -17,15 +14,16 @@ from src.dash import Dash
 from src.structures.data_types import VideoPacket, QUICPacket
 from src.utils import message_to_video_packet, get_client_file_name, get_user_id, create_user_dir, host_parser
 from src.constants.video_constants import HIGH_PRIORITY, FRAME_TIME_MS, LOW_PRIORITY, VIDEO_FPS, CLIENT_BITRATES, \
-    N_SEGMENTS, PUSH_RECEIVED, MAX_TILE, INITIAL_BUFFER_SIZE
+    N_SEGMENTS, MAX_TILE, INITIAL_BUFFER_SIZE
 
 last_segment = 1
 Client_Log = False
 received_files = [[False for x in range(N_SEGMENTS)] for y in range(MAX_TILE)]
 waiting_for_buffer = True
-downloaded_time = 0 
+downloaded_time = 0
 
-async def aioquic_client(ca_cert: str, connection_host: str, connection_port: int, dash: Dash):
+
+async def aioquic_client(ca_cert: str, connection_host: str, connection_port: int, dash_algorithm: Dash):
     print("Connecting to Host", connection_host, connection_port)
     configuration = QuicConfiguration(is_client=True)
     configuration.load_verify_locations(ca_cert)
@@ -33,7 +31,8 @@ async def aioquic_client(ca_cert: str, connection_host: str, connection_port: in
         connection_protocol = QuicConnectionProtocol
         high_priority_reader, high_priority_writer = await connection_protocol.create_stream(client)
         low_priority_reader, low_priority_writer = await connection_protocol.create_stream(client)
-        await handle_stream(high_priority_reader, high_priority_writer, low_priority_reader, low_priority_writer, dash)
+        await handle_stream(high_priority_reader, high_priority_writer, low_priority_reader, low_priority_writer,
+                            dash_algorithm)
 
 
 async def send_data(writer, stream_id, end_stream, packet=None, push_status=None):
@@ -128,7 +127,7 @@ async def handle_stream(hp_reader, hp_writer, lp_reader, lp_writer, dash):
 
                 current_bitrate = dash.get_next_bitrate(video_segment)
 
-                while (waiting_for_buffer==True):
+                while waiting_for_buffer:
                     await asyncio.sleep(0.5)
                     print("Waiting for the buffer to fill...")
 
@@ -181,14 +180,14 @@ async def handle_stream(hp_reader, hp_writer, lp_reader, lp_writer, dash):
                     in_row = False
 
                     if tile in tiles_in_fov:
-                        total_tiles_fov +=1
+                        total_tiles_fov += 1
                         in_row = True
 
                     if not received_files[tile-1][video_segment-1]:
                         missed_tiles += 1
                         if in_row:
                             missed_tiles_fov += 1
-                
+
                 missed_frames += missed_tiles
                 total_frames += total_tiles
                 missed_frames_seg[video_segment] = missed_frames_seg[video_segment] + missed_tiles
@@ -234,7 +233,7 @@ async def handle_stream(hp_reader, hp_writer, lp_reader, lp_writer, dash):
             frame += 1
 
 
-async def receive(reader, client_id, dash):
+async def receive(reader, client_id, client_dash):
     global last_segment
     global Client_Log
     global received_files
@@ -247,7 +246,7 @@ async def receive(reader, client_id, dash):
 
         size, = struct.unpack('<L', await reader.readexactly(4))
 
-        dash.append_download_size(size)
+        client_dash.append_download_size(size)
 
         file_name_data = await reader.readexactly(size)
         file_info = message_to_video_packet(eval(file_name_data.decode()))
@@ -268,37 +267,38 @@ async def receive(reader, client_id, dash):
         last_segment = file_info.segment
 
         received_files[file_info.tile-1][file_info.segment-1] = True
-        
-        downloaded_time += 1/200  
+
+        downloaded_time += 1/200
 
         if Client_Log and current_segment != last_segment:
             print("Receiving segment:", current_segment)
         elif Client_Log:
             print("Receiving file:", file_name)
 
-        dash.update_download_time(timeit.default_timer() - start_time, int(file_info.segment))
+        client_dash.update_download_time(timeit.default_timer() - start_time, int(file_info.segment))
 
-async def play(dash, hp_writer, client_id):
+
+async def play(play_dash, hp_writer, client_id):
     global downloaded_time
     global waiting_for_buffer
 
     start_time = datetime.datetime.now()
     stopped_time = start_time - start_time
-    while downloaded_time<N_SEGMENTS:
+    while downloaded_time < N_SEGMENTS:
         delta = datetime.datetime.now()
         played_time = delta - start_time - stopped_time
         print("Buffer: "+'{0:.2f}'.format(played_time.seconds)+"s/"+'{0:.2f}'.format(downloaded_time)+"s")
-        if (played_time.seconds>downloaded_time):
+        if played_time.seconds > downloaded_time:
             waiting_for_buffer = True
-            await fill_buffer(round(downloaded_time), dash, hp_writer, client_id)
+            await fill_buffer(round(downloaded_time), play_dash, hp_writer, client_id)
             waiting_for_buffer = False
-            stopped_time+=datetime.datetime.now()-delta
+            stopped_time += datetime.datetime.now()-delta
 
         await asyncio.sleep(0.5)
 
-                
-async def fill_buffer(current_segment, dash, hp_writer, client_id):
-    
+
+async def fill_buffer(current_segment, buffer_dash, hp_writer, client_id):
+
     start_segment = current_segment
     end_segment = min(N_SEGMENTS, current_segment+INITIAL_BUFFER_SIZE)
 
@@ -308,7 +308,7 @@ async def fill_buffer(current_segment, dash, hp_writer, client_id):
         if Client_Log:
             print("Request segment ", buffer_segment)
 
-        current_bitrate = dash.get_max_bitrate()
+        current_bitrate = buffer_dash.get_max_bitrate()
         for tile in range(1, MAX_TILE):
             message = VideoPacket(buffer_segment, tile, HIGH_PRIORITY, current_bitrate)
 
@@ -362,7 +362,7 @@ if __name__ == "__main__":
     Client_Log = args.verbose
 
     User_Input_File = args.user_input
-    
+
     host, port = host_parser(args.url)
     print(host)
 
@@ -371,4 +371,5 @@ if __name__ == "__main__":
 
     dash = Dash(CLIENT_BITRATES, args.dash_algorithm)
 
-    asyncio.get_event_loop().run_until_complete(aioquic_client(ca_cert=args.ca_certs, connection_host=host, connection_port=port, dash=dash))
+    asyncio.get_event_loop().run_until_complete(aioquic_client(ca_cert=args.ca_certs, connection_host=host,
+                                                               connection_port=port, dash=dash))
