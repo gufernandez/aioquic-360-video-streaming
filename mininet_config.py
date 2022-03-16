@@ -170,7 +170,7 @@ if __name__ == '__main__':
         "-da",
         "--dash-algorithm",
         required=False,
-        choices=['basic, basic2'],
+        choices=['basic','basic2'],
         default="basic",
         type=str,
         help="dash algorithm (options: basic, basic2) - (defaults to basic)",
