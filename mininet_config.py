@@ -88,7 +88,7 @@ def launch():
     optional_params = ""
     if peek_duration and peek_traffic:
         optional_params = " ".join([peek_duration, peek_traffic])
-    iperf_command = "./iperf_client_script.sh "+iperf_params+optional_params+" &"
+    iperf_command = "./iperf_client_script.sh "+iperf_params+optional_params+" &".replace("\n", "")
     print("Running command: ", iperf_command)
     print(client.cmd(iperf_command))
     iperf_client_pid = client.cmd("echo $!")
