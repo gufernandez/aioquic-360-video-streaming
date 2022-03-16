@@ -69,13 +69,13 @@ def launch():
     client.cmd("export PYTHONPATH=$PYTHONPATH:/root/aioquic-360-video-streaming")
     client.cmd("python3 src/client.py -c cert/pycacert.pem "+server.IP()+":4433 -i data/user_input.csv "
                                                                          ">> out/client_out.txt &")
-    client_pid = client.cmd("echo $!")
+    client_pid = get_last_pid(client)
     print("-> Client running on process: ", client_pid)
 
     print("*** Running iPerf server: "+server.IP()+" ***\n")
     iperf_port = "5002"
     server.cmd("iperf3 -s -p " + iperf_port + " >> out/iperf_server_out.txt &")
-    iperf_server_pid = server.cmd("echo $!")
+    iperf_server_pid = get_last_pid(server)
     print("-> iPerf server running on process: ", iperf_server_pid)
 
     constant_duration = "25"
@@ -92,14 +92,14 @@ def launch():
     iperf_command = "./iperf_client_script.sh "+iperf_params+optional_params+" >> out/iperf_client_out.txt &"
     print("Running command: ", iperf_command)
     client.cmd(iperf_command)
-    iperf_client_pid = client.cmd("echo $!")
+    iperf_client_pid = get_last_pid(client)
     print("-> iPerf client running on process: ", iperf_client_pid)
 
     print("*** Checking for client closure ***\n")
 
     is_running = True
     while is_running:
-        process_command = "pgrep python3 -s ", client_pid
+        process_command = "pgrep python3 -s "+ client_pid
         print(process_command)
         process = client.cmd(process_command)
         print(process)
