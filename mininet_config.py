@@ -71,8 +71,6 @@ def launch():
     client.cmd("export PYTHONPATH=$PYTHONPATH:/root/aioquic-360-video-streaming")
     client_command = "python3 src/client.py -c cert/pycacert.pem "+server.IP()+":4433 -i data/user_input.csv " \
                                                                                ">> out/client_out.txt &"
-    print(client_command)
-    CLI(net)
     client.cmd(client_command)
     client_pid = get_last_pid(client)
     print("-> Client running on process: ", client_pid)
@@ -105,12 +103,21 @@ def launch():
 
     is_running = True
     while is_running:
-        process_command = "pgrep -s " + client_pid
+        process_command = "ps | grep " + client_pid
         process = client.cmd(process_command)
-        print(process)
         if len(process) == 0:
             is_running = False
+        else:
+            client.cmd("sleep 1")
 
+    print("\n\nCLIENT FINISHED\n\n")
+    print("*** Killing remaining process ***\n")
+    print("> Killing video server\n")
+    server.cmd("kill -9 "+server_pid)
+    print("> Killing iPerf server\n")
+    server.cmd("kill -9 "+iperf_server_pid)
+    print("> Killing iPerf client\n\n")
+    client.cmd("kill -9 "+iperf_client_pid)
     print("*** Stopping Mininet ***")
     net.stop()
 
