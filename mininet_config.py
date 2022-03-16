@@ -84,9 +84,13 @@ def launch():
 
     print("*** Running iPerf client with constant traffic of "+constant_traffic+"Bps ***\n")
     client.cmd("chmod 755 iperf_client_script.sh")
-    iperf_params = [server.IP(), iperf_port, client_pid, constant_duration,
-                    constant_traffic, peek_duration, peek_traffic]
-    print(client.cmd("./iperf_client_script.sh "+" ".join(iperf_params)))
+    iperf_params = " ".join([server.IP(), iperf_port, client_pid, constant_duration, constant_traffic])
+    optional_params = ""
+    if peek_duration and peek_traffic:
+        optional_params = " ".join([peek_duration, peek_traffic])
+    iperf_command = "./iperf_client_script.sh "+iperf_params+optional_params+" &"
+    print("Running command: ", iperf_command)
+    print(client.cmd(iperf_command))
     iperf_client_pid = client.cmd("echo $!")
     print("-> iPerf client running on process: ", iperf_client_pid)
 
