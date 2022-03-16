@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import os
+import re
 
 from mininet.topo import Topo
 from mininet.net import Mininet
@@ -61,7 +62,7 @@ def launch():
     print("*** Running server: "+server.IP()+" ***\n")
     server.cmd("export PYTHONPATH=$PYTHONPATH:/root/aioquic-360-video-streaming")
     server.cmd("python3 src/server.py -c cert/ssl_cert.pem -k cert/ssl_key.pem -q 'WFQ' -p >> out/server_out.txt &")
-    server_pid = server.cmd("echo $!")
+    server_pid = get_last_pid(server)
     print("-> Server running on process: ", server_pid)
 
     print("*** Running client: "+client.IP()+" ***\n")
@@ -107,6 +108,13 @@ def launch():
 
     print("*** Stopping Mininet ***")
     net.stop()
+
+
+def get_last_pid(host):
+    pid = host.cmd("echo $!")
+    result = re.findall(r'\d+', pid)
+    print(result)
+    return result[0]
 
 
 if __name__ == '__main__':
