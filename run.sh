@@ -20,8 +20,8 @@ printf "*** First Set ***\n"
 id=1
 bw=100.00
 delay="1ms"
-queue="FIFO"
-push=0
+queue="WFQ"
+push=1
 dash="basic"
 bg_d=30
 bg_t="5M"
