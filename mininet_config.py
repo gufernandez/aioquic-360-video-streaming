@@ -1,5 +1,5 @@
 #!/usr/bin/python
-
+import argparse
 import os
 import re
 
@@ -15,7 +15,7 @@ from mininet.cli import CLI
 class GEANTopo(Topo):
     "GEANT topology for traffic matrix"
 
-    def __init__(self):
+    def __init__(self, bw: float, delay: str):
         # Initialize topology and default options
         Topo.__init__(self)
 
@@ -32,19 +32,20 @@ class GEANTopo(Topo):
         self.addLink(switch_2, host_2)
 
         # add edges between switches
-        self.addLink(switch_1, switch_2, bw=100.0, delay='1ms')  # , loss=1)
+        self.addLink(switch_1, switch_2, bw=bw, delay=delay)  # , loss=1)
 
 
 topos = {'geant': GEANTopo}
 
 
-def launch():
+def launch(mininet_bw: float, mininet_delay: str, server_queue: str, server_push: bool, client_dash: str, 
+           iperf_const_duration: int, iperf_const_traffic: str, iperf_peek_duration: int, iperf_peek_traffic: str):
     """
     Create and launch the network
     """
     # Create network
     print("*** Creating Network ***\n")
-    topog = GEANTopo()
+    topog = GEANTopo(mininet_bw, mininet_delay)
     net = Mininet(topo=topog, link=TCLink)
 
     # Run network
@@ -61,16 +62,21 @@ def launch():
 
     print("*** Running server: "+server.IP()+" ***\n")
     server.cmd("export PYTHONPATH=$PYTHONPATH:/root/aioquic-360-video-streaming")
-    server_command = "python3 src/server.py -c cert/ssl_cert.pem -k cert/ssl_key.pem -q 'WFQ' -p" \
-                     " >> out/server_out.txt &"
+
+    push_flag = ""
+    if server_push:
+        push_flag = "-p"
+
+    server_command = "python3 src/server.py -c cert/ssl_cert.pem -k cert/ssl_key.pem -q " + server_queue + " " \
+                     + push_flag + " >> out/server_out.txt &"
     server.cmd(server_command)
     server_pid = get_last_pid(server)
     print("-> Server running on process: ", server_pid)
 
     print("*** Running client: "+client.IP()+" ***\n")
     client.cmd("export PYTHONPATH=$PYTHONPATH:/root/aioquic-360-video-streaming")
-    client_command = "python3 src/client.py -c cert/pycacert.pem "+server.IP()+":4433 -i data/user_input.csv " \
-                                                                               ">> out/client_out.txt &"
+    client_command = "python3 src/client.py -c cert/pycacert.pem "+server.IP()+":4433 -i data/user_input.csv -da " \
+                     + client_dash + " >> out/client_out.txt &"
     client.cmd(client_command)
     client_pid = get_last_pid(client)
     print("-> Client running on process: ", client_pid)
@@ -82,17 +88,12 @@ def launch():
     iperf_server_pid = get_last_pid(server)
     print("-> iPerf server running on process: ", iperf_server_pid)
 
-    constant_duration = "25"
-    constant_traffic = "5M"
-    peek_duration = "20"
-    peek_traffic = "70M"
-
-    print("*** Running iPerf client with constant traffic of "+constant_traffic+"Bps ***\n")
+    print("*** Running iPerf client with constant traffic of "+iperf_const_traffic+"Bps ***\n")
     client.cmd("chmod 755 iperf_client_script.sh")
-    iperf_params = " ".join([server.IP(), iperf_port, constant_duration, constant_traffic])
+    iperf_params = " ".join([server.IP(), iperf_port, iperf_const_duration, iperf_const_traffic])
     optional_params = ""
-    if peek_duration and peek_traffic:
-        optional_params = " ".join([peek_duration, peek_traffic])
+    if iperf_peek_duration == 0 or iperf_peek_traffic == "0":
+        optional_params = " ".join([iperf_peek_duration, iperf_peek_traffic])
     iperf_command = "./iperf_client_script.sh "+iperf_params+optional_params+" >> out/iperf_client_out.txt &"
     print("Running command: ", iperf_command)
     client.cmd(iperf_command)
@@ -129,9 +130,89 @@ def get_last_pid(host):
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description="Mininet configuration and execution script")
+
+    # Mininet parameters
+    parser.add_argument(
+        "-mb",
+        "--mn-bandwidth",
+        type=float,
+        default=100.00,
+        help="The channel bandwidth (float) of the mininet link in Mbps. Ex: '100.00'"
+    )
+    parser.add_argument(
+        "-md",
+        "--mn-delay",
+        type=str,
+        default="1ms",
+        help="The channel delay of the mininet link. Ex: '1ms'"
+    )
+
+    # Server Parameters
+    parser.add_argument(
+        "-sq",
+        "--server-queue",
+        type=str,
+        choices=['WFQ', 'SP', 'FIFO'],
+        default="FIFO",
+        help="The queuing algorithm used by the Video Server (WFQ, FIFO or SP)"
+    )
+    parser.add_argument(
+        "-sp",
+        "--server-push",
+        type=bool,
+        default=True,
+        help="If server push is enabled or not"
+    )
+
+    # Client Parameters
+    parser.add_argument(
+        "-da",
+        "--dash-algorithm",
+        required=False,
+        choices=['basic, basic2'],
+        default="basic",
+        type=str,
+        help="dash algorithm (options: basic, basic2) - (defaults to basic)",
+    )
+
+    # iPerf Parameters
+    parser.add_argument(
+        "-bd",
+        "--bg-duration",
+        type=int,
+        default=50,
+        help="The duration of the background traffic on iPerf in seconds"
+    )
+    parser.add_argument(
+        "-bt",
+        "--bg-traffic",
+        type=str,
+        default="5M",
+        help="The bandwidth consumption by the background traffic on iPerf in Bytes. Ex: '5M'"
+    )
+    parser.add_argument(
+        "-pd",
+        "--peek-duration",
+        type=int,
+        default=0,
+        help="The duration of the peek traffic on iPerf in seconds"
+    )
+    parser.add_argument(
+        "-pt",
+        "--peek-traffic",
+        type=str,
+        default="0",
+        help="The bandwidth consumption by the peek traffic on iPerf in Bytes. Ex: '70M'"
+    )
+    args = parser.parse_args()
+
     # Cleaning up mininet
     os.system("sudo mn -c")
     # Tell mininet to print useful information
     setLogLevel('info')
 
-    launch()
+    launch(mininet_bw=args.mn_bandwidth, mininet_delay=args.mn_delay, server_queue=args.server_queue,
+           server_push=args.server_push, client_dash=args.dash_algorithm, iperf_const_duration=args.bg_duration,
+           iperf_const_traffic=args.bg_traffic, iperf_peek_duration=args.peek_duration,
+           iperf_peek_traffic=args.peek_traffic)
