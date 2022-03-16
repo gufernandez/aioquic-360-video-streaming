@@ -98,7 +98,9 @@ def launch():
 
     is_running = True
     while is_running:
-        process = client.cmd("ps -p " + client_pid + " | grep python3")
+        process_command = "pgrep python3 -s ", client_pid
+        print(process_command)
+        process = client.cmd(process_command)
         print(process)
         if len(process) == 0:
             is_running = False
