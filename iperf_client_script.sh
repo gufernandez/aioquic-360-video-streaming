@@ -23,21 +23,6 @@ run_iperf_for () {
   iperf3 -c "$SERVER_IP" -p "$IPERF_PORT" -u -b "$2" -t "$1"
 }
 
-# Check if client PID is still running
-is_client_running() {
-  check=$(run_ps)
-  if [ -n "$check" ]; then
-    echo 1
-  else
-    echo 0
-  fi
-}
-
-run_ps() {
-  result=$(ps -p "$CLIENT_PID" | grep python3)
-  echo "$result"
-}
-
 echo "--- Starting iPerf script ---"
 echo "Constant traffic: ${CONSTANT_TRAFFIC}Bps"
 is_running=1
@@ -65,8 +50,5 @@ while [ $is_running -eq 1 ]; do
   if [ -n "$PEEK_TRAFFIC" ]; then
     run_iperf_for "$PEEK_DURATION" "$PEEK_TRAFFIC"
   fi
-
-  echo "Check if client is still running"
-  is_running="$(is_client_running)"
 done
 echo "Finished."
