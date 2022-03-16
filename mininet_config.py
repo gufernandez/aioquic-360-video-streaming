@@ -60,7 +60,7 @@ def launch(exec_id: str, mininet_bw: float, mininet_delay: str, server_queue: st
     server = hosts[0]
     client = hosts[1]
 
-    print("*** Running server: "+server.IP()+" ***\n")
+    print("\n*** Running server: "+server.IP()+" ***")
     server.cmd("export PYTHONPATH=$PYTHONPATH:/root/aioquic-360-video-streaming")
 
     push_flag = ""
@@ -69,26 +69,29 @@ def launch(exec_id: str, mininet_bw: float, mininet_delay: str, server_queue: st
 
     server_command = "python3 src/server.py -c cert/ssl_cert.pem -k cert/ssl_key.pem -q " + server_queue + " " \
                      + push_flag + " > out/" + exec_id + "-server_out.txt &"
+    print(server_command)
     server.cmd(server_command)
     server_pid = get_last_pid(server)
     print("-> Server running on process: ", server_pid)
 
-    print("*** Running client: "+client.IP()+" ***\n")
+    print("\n*** Running client: "+client.IP()+" ***")
     client.cmd("export PYTHONPATH=$PYTHONPATH:/root/aioquic-360-video-streaming")
     client_command = "python3 src/client.py -c cert/pycacert.pem "+server.IP()+":4433 -i data/user_input.csv -da " \
                      + client_dash + " > out/" + exec_id + "-client_out.txt &"
+    print(client_command)
     client.cmd(client_command)
     client_pid = get_last_pid(client)
     print("-> Client running on process: ", client_pid)
 
-    print("*** Running iPerf server: "+server.IP()+" ***\n")
+    print("\n*** Running iPerf server: "+server.IP()+" ***")
     iperf_port = "5002"
     iperf_server_command = "iperf3 -s -p " + iperf_port + " > out/" + exec_id + "-iperf_server_out.txt &"
+    print(iperf_server_command)
     server.cmd(iperf_server_command)
     iperf_server_pid = get_last_pid(server)
     print("-> iPerf server running on process: ", iperf_server_pid)
 
-    print("*** Running iPerf client with constant traffic of "+iperf_const_traffic+"Bps ***\n")
+    print("\n*** Running iPerf client with constant traffic of "+iperf_const_traffic+"Bps ***")
     client.cmd("chmod 755 iperf_client_script.sh")
     iperf_params = " ".join([server.IP(), iperf_port, str(iperf_const_duration), iperf_const_traffic])
     optional_params = ""
@@ -96,12 +99,12 @@ def launch(exec_id: str, mininet_bw: float, mininet_delay: str, server_queue: st
         optional_params = " ".join([str(iperf_peek_duration), iperf_peek_traffic])
     iperf_command = "./iperf_client_script.sh "+iperf_params+" "+optional_params+" > out/"\
                     + exec_id + "-iperf_client_out.txt &"
-    print("Running command: ", iperf_command)
+    print(iperf_command)
     client.cmd(iperf_command)
     iperf_client_pid = get_last_pid(client)
     print("-> iPerf client running on process: ", iperf_client_pid)
 
-    print("*** Checking for client closure ***\n")
+    print("\n*** Checking for client closure ***")
 
     is_running = True
     while is_running:
@@ -112,7 +115,7 @@ def launch(exec_id: str, mininet_bw: float, mininet_delay: str, server_queue: st
         else:
             client.cmd("sleep 1")
 
-    print("\nCLIENT FINISHED\n\n")
+    print("\n\nCLIENT FINISHED\n\n")
     print("*** Killing remaining process ***\n")
     print("> Killing video server\n")
     server.cmd("kill -9 "+server_pid)
