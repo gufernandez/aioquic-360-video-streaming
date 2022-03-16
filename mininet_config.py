@@ -60,20 +60,20 @@ def launch():
 
     print("*** Running server: "+server.IP()+" ***\n")
     server.cmd("export PYTHONPATH=$PYTHONPATH:/root/aioquic-360-video-streaming")
-    server.cmd("python3 src/server.py -c cert/ssl_cert.pem -k cert/ssl_key.pem -q 'WFQ' -p >> data/server_out.txt &")
+    server.cmd("python3 src/server.py -c cert/ssl_cert.pem -k cert/ssl_key.pem -q 'WFQ' -p >> out/server_out.txt &")
     server_pid = server.cmd("echo $!")
     print("-> Server running on process: ", server_pid)
 
     print("*** Running client: "+client.IP()+" ***\n")
     client.cmd("export PYTHONPATH=$PYTHONPATH:/root/aioquic-360-video-streaming")
     client.cmd("python3 src/client.py -c cert/pycacert.pem "+server.IP()+":4433 -i data/user_input.csv "
-                                                                         ">> client_out.txt &")
+                                                                         ">> out/client_out.txt &")
     client_pid = client.cmd("echo $!")
     print("-> Client running on process: ", client_pid)
 
     print("*** Running iPerf server: "+server.IP()+" ***\n")
     iperf_port = "5002"
-    server.cmd("iperf3 -s -p " + iperf_port + "&")
+    server.cmd("iperf3 -s -p " + iperf_port + " >> out/iperf_server_out.txt &")
     iperf_server_pid = server.cmd("echo $!")
     print("-> iPerf server running on process: ", iperf_server_pid)
 
@@ -88,9 +88,9 @@ def launch():
     optional_params = ""
     if peek_duration and peek_traffic:
         optional_params = " ".join([peek_duration, peek_traffic])
-    iperf_command = "./iperf_client_script.sh "+iperf_params+optional_params+" &".replace("\n", "")
+    iperf_command = "./iperf_client_script.sh "+iperf_params+optional_params+" >> out/iperf_client_out.txt &"
     print("Running command: ", iperf_command)
-    print(client.cmd(iperf_command))
+    client.cmd(iperf_command)
     iperf_client_pid = client.cmd("echo $!")
     print("-> iPerf client running on process: ", iperf_client_pid)
 
