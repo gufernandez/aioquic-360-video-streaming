@@ -35,3 +35,34 @@ The command to run the client is:
 Example:
 
 `$ python3 client.py -c '../cert/pycacert.pem' -i '../data/user_input.csv' "wss://127.0.0.1:4433"`
+
+## Simulation Environment
+### 1. SSH
+Access the simulation environment using the ssh command and certificate.
+
+`$ ssh -i CERT_FILE IP_ADDRESS:PORT`
+
+### 2. Setup
+Go the project folder.
+
+`$ cd aioquic-260-video-streaming`
+
+Get the most recent changes from git
+
+`$ git pull`
+
+Make the script file executable.
+
+`$ chmod 755 run.sh`
+
+If you want a clean plate, delete the past logs
+
+`$ rm out/*`
+
+### 3. Run
+
+The script file used to run the simulations is "run.sh". Edit it as necessary to achieve the simulation goals and then run it.
+
+`$ ./run.sh`
+
+The log files for all executions will be stored in the 'out' folder.
