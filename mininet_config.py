@@ -38,7 +38,7 @@ class GEANTopo(Topo):
 topos = {'geant': GEANTopo}
 
 
-def launch(mininet_bw: float, mininet_delay: str, server_queue: str, server_push: bool, client_dash: str, 
+def launch(exec_id: str, mininet_bw: float, mininet_delay: str, server_queue: str, server_push: bool, client_dash: str,
            iperf_const_duration: int, iperf_const_traffic: str, iperf_peek_duration: int, iperf_peek_traffic: str):
     """
     Create and launch the network
@@ -68,7 +68,7 @@ def launch(mininet_bw: float, mininet_delay: str, server_queue: str, server_push
         push_flag = "-p"
 
     server_command = "python3 src/server.py -c cert/ssl_cert.pem -k cert/ssl_key.pem -q " + server_queue + " " \
-                     + push_flag + " >> out/server_out.txt &"
+                     + push_flag + " > out/" + exec_id + "-server_out.txt &"
     server.cmd(server_command)
     server_pid = get_last_pid(server)
     print("-> Server running on process: ", server_pid)
@@ -76,14 +76,14 @@ def launch(mininet_bw: float, mininet_delay: str, server_queue: str, server_push
     print("*** Running client: "+client.IP()+" ***\n")
     client.cmd("export PYTHONPATH=$PYTHONPATH:/root/aioquic-360-video-streaming")
     client_command = "python3 src/client.py -c cert/pycacert.pem "+server.IP()+":4433 -i data/user_input.csv -da " \
-                     + client_dash + " >> out/client_out.txt &"
+                     + client_dash + " > out/" + exec_id + "-client_out.txt &"
     client.cmd(client_command)
     client_pid = get_last_pid(client)
     print("-> Client running on process: ", client_pid)
 
     print("*** Running iPerf server: "+server.IP()+" ***\n")
     iperf_port = "5002"
-    iperf_server_command = "iperf3 -s -p " + iperf_port + " >> out/iperf_server_out.txt &"
+    iperf_server_command = "iperf3 -s -p " + iperf_port + " > out/" + exec_id + "-iperf_server_out.txt &"
     server.cmd(iperf_server_command)
     iperf_server_pid = get_last_pid(server)
     print("-> iPerf server running on process: ", iperf_server_pid)
@@ -92,9 +92,10 @@ def launch(mininet_bw: float, mininet_delay: str, server_queue: str, server_push
     client.cmd("chmod 755 iperf_client_script.sh")
     iperf_params = " ".join([server.IP(), iperf_port, str(iperf_const_duration), iperf_const_traffic])
     optional_params = ""
-    if iperf_peek_duration == 0 or iperf_peek_traffic == "0":
+    if iperf_peek_duration != 0 and iperf_peek_traffic != "0":
         optional_params = " ".join([str(iperf_peek_duration), iperf_peek_traffic])
-    iperf_command = "./iperf_client_script.sh "+iperf_params+optional_params+" >> out/iperf_client_out.txt &"
+    iperf_command = "./iperf_client_script.sh "+iperf_params+optional_params+" > out/"\
+                    + exec_id + "-iperf_client_out.txt &"
     print("Running command: ", iperf_command)
     client.cmd(iperf_command)
     iperf_client_pid = get_last_pid(client)
@@ -111,7 +112,7 @@ def launch(mininet_bw: float, mininet_delay: str, server_queue: str, server_push
         else:
             client.cmd("sleep 1")
 
-    print("\n\nCLIENT FINISHED\n\n")
+    print("\nCLIENT FINISHED\n\n")
     print("*** Killing remaining process ***\n")
     print("> Killing video server\n")
     server.cmd("kill -9 "+server_pid)
@@ -131,6 +132,14 @@ def get_last_pid(host):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Mininet configuration and execution script")
+
+    # Id
+    parser.add_argument(
+        "-id",
+        type=int,
+        default=0,
+        help="The identifier of the execution for logging purposes"
+    )
 
     # Mininet parameters
     parser.add_argument(
@@ -212,7 +221,7 @@ if __name__ == '__main__':
     # Tell mininet to print useful information
     setLogLevel('info')
 
-    launch(mininet_bw=args.mn_bandwidth, mininet_delay=args.mn_delay, server_queue=args.server_queue,
-           server_push=args.server_push, client_dash=args.dash_algorithm, iperf_const_duration=args.bg_duration,
-           iperf_const_traffic=args.bg_traffic, iperf_peek_duration=args.peek_duration,
-           iperf_peek_traffic=args.peek_traffic)
+    launch(exec_id=str(args.id), mininet_bw=args.mn_bandwidth, mininet_delay=args.mn_delay,
+           server_queue=args.server_queue, server_push=args.server_push, client_dash=args.dash_algorithm,
+           iperf_const_duration=args.bg_duration, iperf_const_traffic=args.bg_traffic,
+           iperf_peek_duration=args.peek_duration, iperf_peek_traffic=args.peek_traffic)

@@ -11,4 +11,24 @@
 # -pd > --peek-duration: Duration of iperf peek traffic (repeated)
 # -pt > --peek-traffic: Bandwidth of iperf peek traffic
 
-python3 mininet_config.py -mb 100.00 -md "1ms" -sq "FIFO" -sp true -da "basic" -bd 30 -bt "5M" -pd 20 -pt "80M"
+printf "================ SIMULATION EXECUTION ================\n\n"
+
+printf "*** First Set ***\n"
+
+# Podemos criar um loop aqui
+
+id=1
+bw=100.00
+delay="1ms"
+queue="FIFO"
+push=true
+dash="basic"
+bg_d=30
+bg_t="5M"
+peek_d=20
+peek_t="80M"
+printf "Execução %d. BW: %f, Delay: %s, Queuing: %s, Push: %s" "$id" "$bw" "$delay" "$queue" "$push"
+printf ", Dash: %s, BG Duration: %d, BG Traffic: %s" "$dash" "$bg_d" "$bg_t"
+printf ", Peek Duration: %d, Peek Traffic: %s\n" "$peek_d" "$peek_t"
+
+python3 mininet_config.py -id ${id} -mb ${bw} -md ${delay} -sq ${queue} -sp ${push} -da ${dash} -bd ${bg_d} -bt ${bg_t} -pd ${peek_d} -pt ${peek_t} > out/${id}-exec.txt
