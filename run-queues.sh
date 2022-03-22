@@ -21,7 +21,7 @@ peek_d=0
 peek_t="0"
 
 id=1
-loads=(0.1 0.3)
+loads=(1.00 3.00)
 bands=(10.00 8.00) #Mbps
 delays=("5ms" "10ms" "15ms" "20ms")
 queues=("FIFO" "SP" "WFQ")
@@ -30,17 +30,14 @@ for load in "${loads[@]}"; do
   for bw in "${bands[@]}"; do
     for delay in "${delays[@]}"; do
       for queue in "${queues[@]}"; do
-        printf "*** Cenário %d ***\n" "id"
-
-        load_bw=$((load * bw))
-        bg_t="${load_bw}M"
+        printf "*** Cenário %d ***\n" "$id"
 
         printf "BW: %f, Delay: %s, Queuing: %s, Push: %d" "$bw" "$delay" "$queue" "$push"
-        printf ", Dash: %s, BG Duration: %d, BG Traffic: %s\n" "$dash" "$bg_d" "$bg_t"
+        printf ", Dash: %s, BG Traffic: %s\n" "$dash" "$load"
 
         for ((i = 0 ; i < 5 ; i++)); do
           exec_id="${id}-${i}"
-          python3 mininet_config.py -id "${exec_id}" -mb "${bw}" -md "${delay}" -sq "${queue}" -sp ${push} -da ${dash} -bd ${bg_d} -bt ${bg_t} -pd ${peek_d} -pt ${peek_t} > out/${id}-exec.txt 2>&1
+          python3 mininet_config.py -id "${exec_id}" -mb "${bw}" -md "${delay}" -sq "${queue}" -sp ${push} -da ${dash} -bd ${bg_d} -bt "${load}" -pd ${peek_d} -pt ${peek_t} > out/${id}-exec.txt 2>&1
         done
 
         id=${id}+1
