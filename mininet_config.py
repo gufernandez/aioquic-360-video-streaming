@@ -139,8 +139,8 @@ if __name__ == '__main__':
     # Id
     parser.add_argument(
         "-id",
-        type=int,
-        default=0,
+        type=str,
+        default="",
         help="The identifier of the execution for logging purposes"
     )
 
@@ -225,7 +225,7 @@ if __name__ == '__main__':
     # Tell mininet to print useful information
     setLogLevel('info')
 
-    launch(exec_id=str(args.id), mininet_bw=args.mn_bandwidth, mininet_delay=args.mn_delay,
+    launch(exec_id=args.id, mininet_bw=args.mn_bandwidth, mininet_delay=args.mn_delay,
            server_queue=args.server_queue, server_push=args.server_push, client_dash=args.dash_algorithm,
            iperf_const_duration=args.bg_duration, iperf_const_traffic=args.bg_traffic,
            iperf_peek_duration=args.peek_duration, iperf_peek_traffic=args.peek_traffic)
