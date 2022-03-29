@@ -21,7 +21,7 @@ peek_d=0
 peek_t="0"
 
 id=1
-loads=(1.00 3.00)
+loads=(0.1 0.3)
 bands=(10.00 8.00) #Mbps
 delays=("5ms" "10ms" "15ms" "20ms")
 queues=("FIFO" "SP" "WFQ")
@@ -30,8 +30,10 @@ timestamp="date +%s"
 exec_folder=$(eval "$timestamp")
 mkdir out/"${exec_folder}"
 
-for load in "${loads[@]}"; do
+for per_load in "${loads[@]}"; do
   for bw in "${bands[@]}"; do
+
+    load=$(("$per_load" * "$bw"))
     for delay in "${delays[@]}"; do
       for queue in "${queues[@]}"; do
         printf "*** Cenário %d ***\n" "$id"
