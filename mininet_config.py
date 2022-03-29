@@ -2,7 +2,7 @@
 import argparse
 import os
 import re
-import datetime
+import time
 
 from mininet.topo import Topo
 from mininet.net import Mininet
@@ -55,10 +55,10 @@ def launch(exec_id: str, mininet_bw: float, mininet_delay: str, server_queue: st
     backbone = net.linksBetween(net.get('s1'), net.get('s2'))[0]
 
     # get initial rates
-    initial_rates = get_rx_tx(backbone.intf1.ifconfig())
+    init_rx, init_tx = get_rx_tx(backbone.intf1.ifconfig())
 
     # get initial time
-    initial_timestamp = datetime.datetime.now()
+    initial_timestamp = time.time()
 
     # Generate traffic
     print("*** Generating traffic from TMs ***\n")
@@ -126,18 +126,24 @@ def launch(exec_id: str, mininet_bw: float, mininet_delay: str, server_queue: st
     print("\n\nCLIENT FINISHED\n\n")
 
     # get final rates
-    final_rates = get_rx_tx(backbone.intf1.ifconfig())
+    final_rx, final_tx = get_rx_tx(backbone.intf1.ifconfig())
 
     # get final time
-    closure_timestamp = datetime.datetime.now()
+    closure_timestamp = time.time()
+
+    total_rx = final_rx - init_rx
+    total_tx = final_tx - init_tx
+    execution_time = closure_timestamp - initial_timestamp
 
     print("*** Utilização do Canal ***\n")
-    print("Initial rates: " + str(initial_rates))
-    print("Initial time: " + str(initial_timestamp))
-    print("Final rates: " + str(final_rates))
-    print("Final time: " + str(closure_timestamp))
 
-    print("*** Killing remaining process ***\n")
+    throughput = (total_rx + total_tx) / execution_time
+    print("Taxa no canal: " + str(throughput) + "bits/s")
+
+    channel_usage = 1000000*mininet_bw/throughput
+    print("Uso do canal: " + str(channel_usage))
+
+    print("\n*** Killing remaining process ***\n")
     print("> Killing video server\n")
     server.cmd("kill -9 "+server_pid)
     print("> Killing iPerf server\n")
