@@ -26,6 +26,10 @@ bands=(10.00 8.00) #Mbps
 delays=("5ms" "10ms" "15ms" "20ms")
 queues=("FIFO" "SP" "WFQ")
 
+timestamp="date +%s"
+exec_folder=$(eval "$timestamp")
+mkdir out/"${exec_folder}"
+
 for load in "${loads[@]}"; do
   for bw in "${bands[@]}"; do
     for delay in "${delays[@]}"; do
@@ -37,7 +41,7 @@ for load in "${loads[@]}"; do
 
         for ((i = 0 ; i < 5 ; i++)); do
           exec_id="${id}-${i}"
-          python3 mininet_config.py -id "${exec_id}" -mb "${bw}" -md "${delay}" -sq "${queue}" -sp ${push} -da ${dash} -bd ${bg_d} -bt "${load}" -pd ${peek_d} -pt ${peek_t} > out/${id}-exec.txt 2>&1
+          python3 mininet_config.py -id "${exec_id}" -mb "${bw}" -md "${delay}" -sq "${queue}" -sp ${push} -da ${dash} -bd ${bg_d} -bt "${load}" -pd ${peek_d} -pt ${peek_t} -out "${exec_folder}" > out/"${exec_folder}"/${id}-exec.txt 2>&1
           rm -rf data/client_files_*
         done
 

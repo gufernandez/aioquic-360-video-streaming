@@ -39,7 +39,8 @@ topos = {'geant': GEANTopo}
 
 
 def launch(exec_id: str, mininet_bw: float, mininet_delay: str, server_queue: str, server_push: int, client_dash: str,
-           iperf_const_duration: int, iperf_const_traffic: str, iperf_peek_duration: int, iperf_peek_traffic: str):
+           iperf_const_duration: int, iperf_const_traffic: str, iperf_peek_duration: int, iperf_peek_traffic: str,
+           out_folder: str):
     """
     Create and launch the network
     """
@@ -76,7 +77,7 @@ def launch(exec_id: str, mininet_bw: float, mininet_delay: str, server_queue: st
         push_flag = "-p"
 
     server_command = "python3 src/server.py -c cert/ssl_cert.pem -k cert/ssl_key.pem -q " + server_queue + " " \
-                     + push_flag + " > out/" + exec_id + "-server_out.txt &"
+                     + push_flag + " > out/" + out_folder + "/" + exec_id + "-server_out.txt &"
     print(server_command)
     server.cmd(server_command)
     server_pid = get_last_pid(server)
@@ -85,7 +86,7 @@ def launch(exec_id: str, mininet_bw: float, mininet_delay: str, server_queue: st
     print("\n*** Running client: "+client.IP()+" ***")
     client.cmd("export PYTHONPATH=$PYTHONPATH:/root/aioquic-360-video-streaming")
     client_command = "python3 src/client.py -c cert/pycacert.pem "+server.IP()+":4433 -i data/user_input.csv -da " \
-                     + client_dash + " > out/" + exec_id + "-client_out.txt &"
+                     + client_dash + " > out/" + out_folder + "/" + exec_id + "-client_out.txt &"
     print(client_command)
     client.cmd(client_command)
     client_pid = get_last_pid(client)
@@ -93,7 +94,8 @@ def launch(exec_id: str, mininet_bw: float, mininet_delay: str, server_queue: st
 
     print("\n*** Running iPerf server: "+server.IP()+" ***")
     iperf_port = "5002"
-    iperf_server_command = "iperf3 -s -p " + iperf_port + " > out/" + exec_id + "-iperf_server_out.txt &"
+    iperf_server_command = "iperf3 -s -p " + iperf_port + " > out/" + out_folder + "/" \
+                           + exec_id + "-iperf_server_out.txt &"
     print(iperf_server_command)
     server.cmd(iperf_server_command)
     iperf_server_pid = get_last_pid(server)
@@ -105,7 +107,7 @@ def launch(exec_id: str, mininet_bw: float, mininet_delay: str, server_queue: st
     optional_params = ""
     if iperf_peek_duration != 0 and iperf_peek_traffic != "0":
         optional_params = " ".join([str(iperf_peek_duration), iperf_peek_traffic])
-    iperf_command = "./iperf_client_script.sh "+iperf_params+" "+optional_params+" > out/"\
+    iperf_command = "./iperf_client_script.sh "+iperf_params+" "+optional_params+" > out/" + out_folder + "/" \
                     + exec_id + "-iperf_client_out.txt &"
     print(iperf_command)
     client.cmd(iperf_command)
@@ -139,8 +141,9 @@ def launch(exec_id: str, mininet_bw: float, mininet_delay: str, server_queue: st
 
     throughput = (total_rx + total_tx) / execution_time
     print("Taxa no canal: " + str(throughput) + "bits/s")
+    print("Capacidade do link: " + str(mininet_bw) + "Mbps")
 
-    channel_usage = 1000000*mininet_bw/throughput
+    channel_usage = throughput/1000000*mininet_bw
     print("Uso do canal: " + str(channel_usage))
 
     print("\n*** Killing remaining process ***\n")
@@ -259,6 +262,13 @@ if __name__ == '__main__':
         default="0",
         help="The bandwidth consumption by the peek traffic on iPerf in Bytes. Ex: '70M'"
     )
+    parser.add_argument(
+        "-out",
+        "--out-directory",
+        type=str,
+        default="default",
+        help="The folder to store the scripts outputs"
+    )
     args = parser.parse_args()
 
     # Cleaning up mininet
@@ -269,4 +279,4 @@ if __name__ == '__main__':
     launch(exec_id=args.id, mininet_bw=args.mn_bandwidth, mininet_delay=args.mn_delay,
            server_queue=args.server_queue, server_push=args.server_push, client_dash=args.dash_algorithm,
            iperf_const_duration=args.bg_duration, iperf_const_traffic=args.bg_traffic,
-           iperf_peek_duration=args.peek_duration, iperf_peek_traffic=args.peek_traffic)
+           iperf_peek_duration=args.peek_duration, iperf_peek_traffic=args.peek_traffic, out_folder=args.out)
