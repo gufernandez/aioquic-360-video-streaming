@@ -143,7 +143,7 @@ def launch(exec_id: str, mininet_bw: float, mininet_delay: str, server_queue: st
     print("Taxa no canal: " + str(throughput) + "bits/s")
     print("Capacidade do link: " + str(mininet_bw) + "Mbps")
 
-    channel_usage = throughput/1000000*mininet_bw
+    channel_usage = throughput/(1048576*mininet_bw)
     print("Uso do canal: " + str(channel_usage))
 
     print("\n*** Killing remaining process ***\n")
