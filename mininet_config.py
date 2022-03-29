@@ -52,7 +52,7 @@ def launch(exec_id: str, mininet_bw: float, mininet_delay: str, server_queue: st
     print("*** Firing up Mininet ***\n")
     net.start()
 
-    backbone = net.linksBetween(net.get('s0'), net.get('s1'))[0]
+    backbone = net.linksBetween(net.get('s1'), net.get('s2'))[0]
 
     # get initial rates
     initial_rates = get_rx_tx(backbone.intf1.ifconfig())
