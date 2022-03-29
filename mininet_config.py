@@ -2,12 +2,12 @@
 import argparse
 import os
 import re
+import datetime
 
 from mininet.topo import Topo
 from mininet.net import Mininet
 from mininet.link import TCLink
 from mininet.log import setLogLevel
-from mininet.cli import CLI
 
 
 # execfile('sflow-rt/extras/sflow.py')
@@ -51,6 +51,14 @@ def launch(exec_id: str, mininet_bw: float, mininet_delay: str, server_queue: st
     # Run network
     print("*** Firing up Mininet ***\n")
     net.start()
+
+    backbone = net.linksBetween(net.get('s0'), net.get('s1'))[0]
+
+    # get initial rates
+    initial_rates = get_rx_tx(backbone.intf1.ifconfig())
+
+    # get initial time
+    initial_timestamp = datetime.datetime.now()
 
     # Generate traffic
     print("*** Generating traffic from TMs ***\n")
@@ -116,6 +124,19 @@ def launch(exec_id: str, mininet_bw: float, mininet_delay: str, server_queue: st
             client.cmd("sleep 1")
 
     print("\n\nCLIENT FINISHED\n\n")
+
+    # get final rates
+    final_rates = get_rx_tx(backbone.intf1.ifconfig())
+
+    # get final time
+    closure_timestamp = datetime.datetime.now()
+
+    print("*** Utilização do Canal ***\n")
+    print("Initial rates: " + str(initial_rates))
+    print("Initial time: " + str(initial_timestamp))
+    print("Final rates: " + str(final_rates))
+    print("Final time: " + str(closure_timestamp))
+
     print("*** Killing remaining process ***\n")
     print("> Killing video server\n")
     server.cmd("kill -9 "+server_pid)
@@ -131,6 +152,20 @@ def get_last_pid(host):
     pid = host.cmd("echo $!")
     result = re.findall(r'\d+', pid)
     return result[0]
+
+
+def get_rx_tx(ifconfig):
+    rx_regex = re.compile(r"RX packets \d+  bytes (\d+)")
+    tx_regex = re.compile(r"TX packets \d+  bytes (\d+)")
+
+    # extract RX
+    rx = rx_regex.search(ifconfig, re.MULTILINE).group(1)
+
+    # extract TX
+    tx = tx_regex.search(ifconfig, re.MULTILINE).group(1)
+
+    # return values in bits
+    return int(rx) * 8, int(tx) * 8
 
 
 if __name__ == '__main__':
