@@ -32,14 +32,14 @@ mkdir out/"${exec_folder}"
 
 for per_load in "${loads[@]}"; do
   for bw in "${bands[@]}"; do
-
-    load=$(("$per_load" * "$bw"))
+    load_cmd="${per_load} * ${bw}"
+    load=$(eval "$load_cmd" | bc)
     for delay in "${delays[@]}"; do
       for queue in "${queues[@]}"; do
         printf "*** Cenário %d ***\n" "$id"
 
         printf "BW: %f, Delay: %s, Queuing: %s, Push: %d" "$bw" "$delay" "$queue" "$push"
-        printf ", Dash: %s, BG Traffic: %s\n" "$dash" "$load"
+        printf ", Dash: %s, BG Traffic: %f\n" "$dash" "$load"
 
         for ((i = 0 ; i < 5 ; i++)); do
           exec_id="${id}-${i}"
