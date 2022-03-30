@@ -32,8 +32,7 @@ mkdir out/"${exec_folder}"
 
 for per_load in "${loads[@]}"; do
   for bw in "${bands[@]}"; do
-    load_cmd="${per_load} * ${bw}"
-    load=$(eval "$load_cmd" | bc)
+    load=$("${per_load} * ${bw}" | bc)
     for delay in "${delays[@]}"; do
       for queue in "${queues[@]}"; do
         printf "*** Cenário %d ***\n" "$id"
