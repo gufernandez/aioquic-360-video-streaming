@@ -30,9 +30,8 @@ timestamp="date +%s"
 exec_folder=$(eval "$timestamp")
 mkdir out/"${exec_folder}"
 
-for per_load in "${loads[@]}"; do
+for load in "${loads[@]}"; do
   for bw in "${bands[@]}"; do
-    load=$("${per_load} * ${bw}" | bc)
     for delay in "${delays[@]}"; do
       for queue in "${queues[@]}"; do
         printf "*** Cenário %d ***\n" "$id"
