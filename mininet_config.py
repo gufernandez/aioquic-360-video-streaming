@@ -94,7 +94,7 @@ def launch(exec_id: str, mininet_bw: float, mininet_delay: str, server_queue: st
 
     print("\n*** Running iPerf server: "+server.IP()+" ***")
     iperf_port = "5002"
-    iperf_server_command = "iperf3 -s -p " + iperf_port + " > out/" + out_folder + "/" \
+    iperf_server_command = "iperf3 -s -p -u " + iperf_port + " > out/" + out_folder + "/" \
                            + exec_id + "-iperf_server_out.txt &"
     print(iperf_server_command)
     server.cmd(iperf_server_command)
@@ -135,15 +135,8 @@ def launch(exec_id: str, mininet_bw: float, mininet_delay: str, server_queue: st
     # get final time
     closure_timestamp = time.time()
 
-    print("FINAL RX: " + str(final_rx) + "bits")
-    print("INIT RX: "+ str(init_rx) + "bits")
     total_rx = final_rx - init_rx
-    print("TOTAL RX: "+str(total_rx) + "bits")
-
-    print("FINAL TX: "+ str(final_tx) + "bits")
-    print("INIT TX: "+str(final_tx) + "bits")
     total_tx = final_tx - init_tx
-    print("TOTAL TX: "+str(total_tx)+ "bits")
     execution_time = closure_timestamp - initial_timestamp
 
     print("*** Utilização do Canal ***\n")

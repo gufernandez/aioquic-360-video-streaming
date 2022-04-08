@@ -21,8 +21,7 @@ peek_d=0
 peek_t="0"
 
 id=1
-#loads=(0.1 0.3)
-loads=(0.3)
+loads=(0.1 0.3)
 bands=(10.00 8.00) #Mbps
 delays=("5ms" "10ms" "15ms" "20ms")
 queues=("FIFO" "SP" "WFQ")
