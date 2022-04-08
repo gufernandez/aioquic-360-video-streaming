@@ -47,7 +47,7 @@ def print_row():
 
 
 if __name__ == '__main__':
-    args_dir = 1648744517
+    args_dir = 1649178395
     user_dir = "./out/" + str(args_dir) + "/"
 
     print("id; load_per; channel_bandwidth; delay_ms; queue; rebuffer_count; rebuffer_s; miss_ratio_all_per; "
@@ -65,7 +65,7 @@ if __name__ == '__main__':
         iperf_usage = []
         application_channel_usage = []
 
-        for i in range(5):
+        for i in range(10):
             # CLIENT FILE: RATIOS and BITRATE
             file_name = user_dir + '-'.join([str(cenario_id), str(i), "client_out.txt"])
             with open(file_name) as f:
@@ -123,34 +123,7 @@ if __name__ == '__main__':
                             break
                         state += 1
 
-            # IPERF FILE: Channel Usage by Iperf
-            file_name = user_dir + '-'.join([str(cenario_id), str(i), "iperf_client_out.txt"])
-            with open(file_name) as f:
-                lines = f.readlines()
-
-                state = 0
-                iperf_datagrams = 0
-                iperf_seconds = 0
-                for line in lines:
-                    if state == 1:
-                        end = re.findall(IPERF_END_PATTERN, line)
-                        if end:
-                            state = 0
-                            continue
-
-                    result = re.findall(IPERF_PATTERNS[state], line)
-
-                    if result:
-                        if state == 0:
-                            state = 1
-                        elif state == 1:
-                            iperf_datagrams += int(result[0])
-                            iperf_seconds += 1
-
-                iperf_throughput = iperf_datagrams*DATAGRAM_SIZE/iperf_seconds
-                iperf_usage.append(iperf_throughput / (1048576 * channel_bw))
-
-        for i in range(5):
+        for i in range(10):
             application_channel_usage.append(total_channel_usage[i] - iperf_usage[i])
 
         rebuffering_count_mean = mean(rebuffering_count)

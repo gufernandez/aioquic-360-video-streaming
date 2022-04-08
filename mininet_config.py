@@ -135,8 +135,15 @@ def launch(exec_id: str, mininet_bw: float, mininet_delay: str, server_queue: st
     # get final time
     closure_timestamp = time.time()
 
+    print("FINAL RX: " + str(final_rx) + "bits")
+    print("INIT RX: "+ str(init_rx) + "bits")
     total_rx = final_rx - init_rx
+    print("TOTAL RX: "+str(total_rx) + "bits")
+
+    print("FINAL TX: "+ str(final_tx) + "bits")
+    print("INIT TX: "+str(final_tx) + "bits")
     total_tx = final_tx - init_tx
+    print("TOTAL TX: "+str(total_tx)+ "bits")
     execution_time = closure_timestamp - initial_timestamp
 
     print("*** Utilização do Canal ***\n")
