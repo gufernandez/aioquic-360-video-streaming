@@ -94,7 +94,7 @@ def launch(exec_id: str, mininet_bw: float, mininet_delay: str, server_queue: st
 
     print("\n*** Running iPerf server: "+server.IP()+" ***")
     iperf_port = "5002"
-    iperf_server_command = "iperf3 -s -p -u " + iperf_port + " > out/" + out_folder + "/" \
+    iperf_server_command = "iperf3 -s -p " + iperf_port + " > out/" + out_folder + "/" \
                            + exec_id + "-iperf_server_out.txt &"
     print(iperf_server_command)
     server.cmd(iperf_server_command)

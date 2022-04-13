@@ -17,12 +17,14 @@ DATAGRAM_PATTERN = r'(\d+)  $'
 IPERF_END_PATTERN = r'iperf Done.'
 IPERF_PATTERNS = [IPERF_START_PATTERN, DATAGRAM_PATTERN]
 
-DATAGRAM_SIZE = 65536 #bits
+DATAGRAM_SIZE = 65536  # bits
 
 LOADS = [0.1, 0.3]
 BANDS = [10.00, 8.00]  # Mbps
 DELAYS = ["5ms", "10ms", "15ms", "20ms"]
 QUEUES = ["FIFO", "SP", "WFQ"]
+
+N_EXECUTION = 5
 
 
 def mean(number_list):
@@ -30,7 +32,7 @@ def mean(number_list):
 
 
 def mean_percentage(number_list):
-    return round(sum(number_list) / (len(number_list)*100), 5)
+    return round(sum(number_list) / (len(number_list) * 100), 5)
 
 
 def get_att_id(cen_id, mod, div):
@@ -39,15 +41,15 @@ def get_att_id(cen_id, mod, div):
 
 def print_row():
     row = "; ".join([str(cenario_id), str(LOADS[loads_id]), str(BANDS[bands_id]), DELAYS[delay_id], QUEUES[queue_id],
-                    str(rebuffering_count_mean), str(rebuffered_secs_mean), str(missing_ratio_total_mean),
-                    str(missing_ratio_pov_mean), str(bitrate_avg_mean), str(total_channel_usage_mean),
-                    str(application_channel_usage_mean), str(iperf_usage_mean)])
+                     str(rebuffering_count_mean), str(rebuffered_secs_mean), str(missing_ratio_total_mean),
+                     str(missing_ratio_pov_mean), str(bitrate_avg_mean), str(total_channel_usage_mean),
+                     str(application_channel_usage_mean), str(iperf_usage_mean)])
     row = row.replace('.', ',')
     print(row)
 
 
 if __name__ == '__main__':
-    args_dir = 1649178395
+    args_dir = 1649692808
     user_dir = "./out/" + str(args_dir) + "/"
 
     print("id; load_per; channel_bandwidth; delay_ms; queue; rebuffer_count; rebuffer_s; miss_ratio_all_per; "
@@ -65,7 +67,7 @@ if __name__ == '__main__':
         iperf_usage = []
         application_channel_usage = []
 
-        for i in range(10):
+        for i in range(N_EXECUTION):
             # CLIENT FILE: RATIOS and BITRATE
             file_name = user_dir + '-'.join([str(cenario_id), str(i), "client_out.txt"])
             with open(file_name) as f:
@@ -123,7 +125,38 @@ if __name__ == '__main__':
                             break
                         state += 1
 
-        for i in range(10):
+            # IPERF FILE: Channel Usage by Iperf
+            file_name = user_dir + '-'.join([str(cenario_id), str(i), "iperf_client_out.txt"])
+            with open(file_name) as f:
+                lines = f.readlines()
+
+                state = 0
+                iperf_datagrams = 0
+                iperf_seconds = 0
+                for line in lines:
+                    print(line)
+                    if state == 1:
+                        end = re.findall(IPERF_END_PATTERN, line)
+                        if end:
+                            state = 0
+                            continue
+
+                    result = re.findall(IPERF_PATTERNS[state], line)
+
+                    if result:
+                        if state == 0:
+                            state = 1
+                        elif state == 1:
+                            iperf_datagrams += int(result[0])
+                            iperf_seconds += 1
+
+                iperf_throughput = iperf_datagrams * DATAGRAM_SIZE / iperf_seconds
+                iperf_usage.append(iperf_throughput / (1048576 * channel_bw))
+
+        for i in range(N_EXECUTION):
+            print(i)
+            print(total_channel_usage)
+            print(iperf_usage)
             application_channel_usage.append(total_channel_usage[i] - iperf_usage[i])
 
         rebuffering_count_mean = mean(rebuffering_count)
