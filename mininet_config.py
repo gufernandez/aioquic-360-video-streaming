@@ -52,22 +52,25 @@ def launch(exec_id: str, mininet_bw: float, mininet_delay: str, server_queue: st
     # Run network
     print("*** Firing up Mininet ***\n")
     net.start()
-
-    backbone = net.linksBetween(net.get('s1'), net.get('s2'))[0]
-
-    # get initial rates
-    init_rx, init_tx = get_rx_tx(backbone.intf1.ifconfig())
-
-    # get initial time
-    initial_timestamp = time.time()
-
-    # Generate traffic
-    print("*** Generating traffic from TMs ***\n")
-
     hosts = net.hosts
 
     server = hosts[0]
     client = hosts[1]
+
+    # ******************************
+    # Rodando servidor iPerf
+
+    print("\n*** Running iPerf server: "+server.IP()+" ***")
+    iperf_port = "5002"
+    iperf_server_command = "iperf3 -s -p " + iperf_port + " > out/" + out_folder + "/" \
+                           + exec_id + "-iperf_server_out.txt &"
+    print(iperf_server_command)
+    server.cmd(iperf_server_command)
+    iperf_server_pid = get_last_pid(server)
+    print("-> iPerf server running on process: ", iperf_server_pid)
+
+    # ******************************
+    # Rodando servidor de vídeo
 
     print("\n*** Running server: "+server.IP()+" ***")
     server.cmd("export PYTHONPATH=$PYTHONPATH:/root/aioquic-360-video-streaming")
@@ -83,23 +86,8 @@ def launch(exec_id: str, mininet_bw: float, mininet_delay: str, server_queue: st
     server_pid = get_last_pid(server)
     print("-> Server running on process: ", server_pid)
 
-    print("\n*** Running client: "+client.IP()+" ***")
-    client.cmd("export PYTHONPATH=$PYTHONPATH:/root/aioquic-360-video-streaming")
-    client_command = "python3 src/client.py -c cert/pycacert.pem "+server.IP()+":4433 -i data/user_input.csv -da " \
-                     + client_dash + " > out/" + out_folder + "/" + exec_id + "-client_out.txt &"
-    print(client_command)
-    client.cmd(client_command)
-    client_pid = get_last_pid(client)
-    print("-> Client running on process: ", client_pid)
-
-    print("\n*** Running iPerf server: "+server.IP()+" ***")
-    iperf_port = "5002"
-    iperf_server_command = "iperf3 -s -p " + iperf_port + " > out/" + out_folder + "/" \
-                           + exec_id + "-iperf_server_out.txt &"
-    print(iperf_server_command)
-    server.cmd(iperf_server_command)
-    iperf_server_pid = get_last_pid(server)
-    print("-> iPerf server running on process: ", iperf_server_pid)
+    # ******************************
+    # Rodando cliente do iPerf
 
     const_traffic = str(mininet_bw * iperf_const_load) + "M"
     print("\n*** Running iPerf client with constant traffic of " + const_traffic + "bps ***")
@@ -116,6 +104,36 @@ def launch(exec_id: str, mininet_bw: float, mininet_delay: str, server_queue: st
     iperf_client_pid = get_last_pid(client)
     print("-> iPerf client running on process: ", iperf_client_pid)
 
+    # ******************************
+    # Rodando cliente de vídeo
+
+    print("\n*** Running client: "+client.IP()+" ***")
+    client.cmd("export PYTHONPATH=$PYTHONPATH:/root/aioquic-360-video-streaming")
+    client_command = "python3 src/client.py -c cert/pycacert.pem "+server.IP()+":4433 -i data/user_input.csv -da " \
+                     + client_dash + " > out/" + out_folder + "/" + exec_id + "-client_out.txt &"
+    print(client_command)
+    client.cmd(client_command)
+    client_pid = get_last_pid(client)
+    print("-> Client running on process: ", client_pid)
+    time.sleep(1)
+
+    # ******************************
+    # Medida de tráfego inicial
+
+    backbone = net.linksBetween(net.get('s1'), net.get('s2'))[0]
+
+    # get initial rates
+    init_rx, init_tx = get_rx_tx(backbone.intf1.ifconfig())
+
+    # get initial time
+    initial_timestamp = time.time()
+
+    print("RX Inicial: " + str(init_rx) + "bits")
+    print("TX Inicial: " + str(init_tx) + "bits")
+
+    # ******************************
+    # Aguardando fim
+
     print("\n*** Checking for client closure ***")
 
     is_running = True
@@ -125,9 +143,12 @@ def launch(exec_id: str, mininet_bw: float, mininet_delay: str, server_queue: st
         if len(process) == 0:
             is_running = False
         else:
-            client.cmd("sleep 1")
+            time.sleep(2)
 
     print("\n\nCLIENT FINISHED\n\n")
+
+    # ******************************
+    # Medida de tráfego final
 
     # get final rates
     final_rx, final_tx = get_rx_tx(backbone.intf1.ifconfig())
@@ -135,18 +156,28 @@ def launch(exec_id: str, mininet_bw: float, mininet_delay: str, server_queue: st
     # get final time
     closure_timestamp = time.time()
 
-    total_rx = final_rx - init_rx
-    total_tx = final_tx - init_tx
-    execution_time = closure_timestamp - initial_timestamp
+    print("RX Final: " + str(final_rx) + "bits")
+    print("TX Final: " + str(final_tx) + "bits")
+
+    # ******************************
+    # Cálculo de uso do canal
 
     print("*** Utilização do Canal ***\n")
 
+    total_rx = final_rx - init_rx
+    total_tx = final_tx - init_tx
+
+    execution_time = closure_timestamp - initial_timestamp
     throughput = (total_rx + total_tx) / execution_time
+
     print("Taxa no canal: " + str(throughput) + "bits/s")
     print("Capacidade do link: " + str(mininet_bw) + "Mbps")
 
     channel_usage = throughput/(1048576*mininet_bw)
     print("Uso do canal: " + str(channel_usage))
+
+    # ******************************
+    # Encerrando processos
 
     print("\n*** Killing remaining process ***\n")
     print("> Killing video server\n")
@@ -229,7 +260,7 @@ if __name__ == '__main__':
         "-da",
         "--dash-algorithm",
         required=False,
-        choices=['basic','basic2'],
+        choices=['basic', 'basic2'],
         default="basic",
         type=str,
         help="dash algorithm (options: basic, basic2) - (defaults to basic)",
@@ -240,7 +271,7 @@ if __name__ == '__main__':
         "-bd",
         "--bg-duration",
         type=int,
-        default=50,
+        default=80,
         help="The duration of the background traffic on iPerf in seconds"
     )
     parser.add_argument(

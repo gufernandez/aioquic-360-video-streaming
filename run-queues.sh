@@ -14,7 +14,7 @@ printf "================ Execução de Simulação com alternância nas filas ==
 
 push=1 # Push sempre ativado
 dash="basic" # Bash sempre como basic
-bg_d=60 #sec
+bg_d=80 #sec
 
 # Sem picos
 peek_d=0
