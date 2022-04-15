@@ -23,7 +23,7 @@ peek_t="0"
 id=1
 loads=(0.1 0.3)
 bands=(10.00 8.00) #Mbps
-delays=("5ms" "10ms" "15ms" "20ms")
+delays=("5ms" "20ms" "50ms" "100ms")
 queues=("FIFO" "SP" "WFQ")
 
 timestamp="date +%s"

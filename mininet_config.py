@@ -127,7 +127,7 @@ def launch(exec_id: str, mininet_bw: float, mininet_delay: str, server_queue: st
 
     # get initial time
     initial_timestamp = time.time()
-
+    print("\n*** Transmissão inicial ***")
     print("RX Inicial: " + str(init_rx) + "bits")
     print("TX Inicial: " + str(init_tx) + "bits")
 
@@ -156,6 +156,7 @@ def launch(exec_id: str, mininet_bw: float, mininet_delay: str, server_queue: st
     # get final time
     closure_timestamp = time.time()
 
+    print("\n*** Transmissão final ***")
     print("RX Final: " + str(final_rx) + "bits")
     print("TX Final: " + str(final_tx) + "bits")
 
