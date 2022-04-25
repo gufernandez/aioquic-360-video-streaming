@@ -89,3 +89,5 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
+    generate_load(server_ip=args.server_ip, server_port=args.server_port, duration=args.duration,
+                  bandwidth=args.mn_bandwidth, load=args.load)
