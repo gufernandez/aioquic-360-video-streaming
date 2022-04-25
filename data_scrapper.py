@@ -21,7 +21,7 @@ DATAGRAM_SIZE = 65536  # bits
 
 LOADS = [0.1, 0.3]
 BANDS = [10.00, 8.00]  # Mbps
-DELAYS = ["5ms", "10ms", "15ms", "20ms"]
+DELAYS = ["5ms", "20ms", "50ms", "100ms"]
 QUEUES = ["FIFO", "SP", "WFQ"]
 
 N_EXECUTION = 5
@@ -49,7 +49,7 @@ def print_row():
 
 
 if __name__ == '__main__':
-    args_dir = 1649692808
+    args_dir = 1650288199
     user_dir = "./out/" + str(args_dir) + "/"
 
     print("id; load_per; channel_bandwidth; delay_ms; queue; rebuffer_count; rebuffer_s; miss_ratio_all_per; "
@@ -134,7 +134,6 @@ if __name__ == '__main__':
                 iperf_datagrams = 0
                 iperf_seconds = 0
                 for line in lines:
-                    print(line)
                     if state == 1:
                         end = re.findall(IPERF_END_PATTERN, line)
                         if end:
@@ -154,9 +153,6 @@ if __name__ == '__main__':
                 iperf_usage.append(iperf_throughput / (1048576 * channel_bw))
 
         for i in range(N_EXECUTION):
-            print(i)
-            print(total_channel_usage)
-            print(iperf_usage)
             application_channel_usage.append(total_channel_usage[i] - iperf_usage[i])
 
         rebuffering_count_mean = mean(rebuffering_count)

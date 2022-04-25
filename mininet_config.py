@@ -15,7 +15,7 @@ from mininet.log import setLogLevel
 class GEANTopo(Topo):
     "GEANT topology for traffic matrix"
 
-    def __init__(self, bw: float, delay: str):
+    def __init__(self, bw: float, delay: str, buffer_size: int):
         # Initialize topology and default options
         Topo.__init__(self)
 
@@ -32,21 +32,20 @@ class GEANTopo(Topo):
         self.addLink(switch_2, host_2)
 
         # add edges between switches
-        self.addLink(switch_1, switch_2, bw=bw, delay=delay)  # , loss=1)
+        self.addLink(switch_1, switch_2, bw=bw, delay=delay, max_queue_size=buffer_size)
 
 
 topos = {'geant': GEANTopo}
 
 
-def launch(exec_id: str, mininet_bw: float, mininet_delay: str, server_queue: str, server_push: int, client_dash: str,
-           iperf_const_duration: int, iperf_const_load: float, iperf_peek_duration: int, iperf_peek_load: float,
-           out_folder: str):
+def launch(exec_id: str, mininet_bw: float, mininet_delay: str, mininet_buffer: int, server_queue: str, server_push: int, client_dash: str,
+           iperf_const_duration: int, iperf_const_load: float, out_folder: str):
     """
     Create and launch the network
     """
     # Create network
     print("*** Creating Network ***\n")
-    topog = GEANTopo(mininet_bw, mininet_delay)
+    topog = GEANTopo(mininet_bw, mininet_delay, mininet_buffer)
     net = Mininet(topo=topog, link=TCLink)
 
     # Run network
@@ -93,11 +92,7 @@ def launch(exec_id: str, mininet_bw: float, mininet_delay: str, server_queue: st
     print("\n*** Running iPerf client with constant traffic of " + const_traffic + "bps ***")
     client.cmd("chmod 755 iperf_client_script.sh")
     iperf_params = " ".join([server.IP(), iperf_port, str(iperf_const_duration), const_traffic])
-    optional_params = ""
-    if iperf_peek_duration != 0 and iperf_peek_load != 0.0:
-        peek_traffic = str(mininet_bw * iperf_peek_load) + "M"
-        optional_params = " ".join([str(iperf_peek_duration), peek_traffic])
-    iperf_command = "./iperf_client_script.sh "+iperf_params+" "+optional_params+" > out/" + out_folder + "/" \
+    iperf_command = "./iperf_client_script.sh "+iperf_params+" > out/" + out_folder + "/" \
                     + exec_id + "-iperf_client_out.txt &"
     print(iperf_command)
     client.cmd(iperf_command)
@@ -115,7 +110,7 @@ def launch(exec_id: str, mininet_bw: float, mininet_delay: str, server_queue: st
     client.cmd(client_command)
     client_pid = get_last_pid(client)
     print("-> Client running on process: ", client_pid)
-    time.sleep(1)
+    time.sleep(2)
 
     # ******************************
     # Medida de tráfego inicial
@@ -237,6 +232,12 @@ if __name__ == '__main__':
         default="1ms",
         help="The channel delay of the mininet link. Ex: '1ms'"
     )
+    parser.add_argument(
+        "-mbf",
+        "--mn-buffer",
+        type=int,
+        help="The mininet buffer size"
+    )
 
     # Server Parameters
     parser.add_argument(
@@ -283,20 +284,6 @@ if __name__ == '__main__':
         help="The bandwidth consumption by the background traffic on iPerf. Ex: 0.1 = 10%"
     )
     parser.add_argument(
-        "-pd",
-        "--peek-duration",
-        type=int,
-        default=0,
-        help="The duration of the peek traffic on iPerf in seconds"
-    )
-    parser.add_argument(
-        "-pt",
-        "--peek-traffic",
-        type=float,
-        default=0,
-        help="The bandwidth consumption by the peek traffic on iPerf in Bytes. Ex: 0.7 = 70%"
-    )
-    parser.add_argument(
         "-out",
         "--out-directory",
         type=str,
@@ -310,7 +297,6 @@ if __name__ == '__main__':
     # Tell mininet to print useful information
     setLogLevel('info')
 
-    launch(exec_id=args.id, mininet_bw=args.mn_bandwidth, mininet_delay=args.mn_delay,
+    launch(exec_id=args.id, mininet_bw=args.mn_bandwidth, mininet_delay=args.mn_delay, mininet_buffer=args.mn_buffer,
            server_queue=args.server_queue, server_push=args.server_push, client_dash=args.dash_algorithm,
-           iperf_const_duration=args.bg_duration, iperf_const_load=args.bg_traffic,
-           iperf_peek_duration=args.peek_duration, iperf_peek_load=args.peek_traffic, out_folder=args.out_directory)
+           iperf_const_duration=args.bg_duration, iperf_const_load=args.bg_traffic, out_folder=args.out_directory)
