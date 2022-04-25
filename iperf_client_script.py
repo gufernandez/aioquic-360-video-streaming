@@ -29,27 +29,27 @@ def generate_load(server_ip: str, server_port: str, duration: int, bandwidth: fl
 
     state = 1
     while True:
-        match state:
-            case 1:
-                run_iperf(server_ip, server_port, get_load(load_traffic, load_m1), str(d1))
-                state = 2
-            case 2:
-                time.sleep(d2)
-                state = 3
-            case 3:
-                run_iperf(server_ip, server_port, get_load(load_traffic, load_m3), str(d3))
-                state = 4
-            case 4:
-                time.sleep(d4)
-                state = 5
-            case 5:
-                run_iperf(server_ip, server_port, get_load(load_traffic, load_m5), str(d5))
-                state = 5
-            case 6:
-                time.sleep(d6)
-                state = 1
-            case _:
-                print("Erro na execução do IPerf")
+        if state == 1:
+            run_iperf(server_ip, server_port, get_load(load_traffic, load_m1), str(d1))
+            state = 2
+        elif state == 2:
+            time.sleep(d2)
+            state = 3
+        elif state == 3:
+            run_iperf(server_ip, server_port, get_load(load_traffic, load_m3), str(d3))
+            state = 4
+        elif state == 4:
+            time.sleep(d4)
+            state = 5
+        elif state == 5:
+            run_iperf(server_ip, server_port, get_load(load_traffic, load_m5), str(d5))
+            state = 6
+        elif state == 6:
+            time.sleep(d6)
+            state = 1
+        else:
+            print("Erro na execução do IPerf")
+            return 0
 
 
 if __name__ == '__main__':
