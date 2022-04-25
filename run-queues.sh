@@ -34,7 +34,7 @@ for load in "${loads[@]}"; do
         for buffer_size in "${mn_buffer[@]}"; do
           printf "*** Cenário %d ***\n" "$id"
 
-          printf "BW: %f, Delay: %s, Queuing: %s, Push: %d" "$bw" "$delay" "$queue" "$push"
+          printf "BW: %f, Delay: %s, Queuing: %s, Push: %d, Buffer Size: %d" "$bw" "$delay" "$queue" "$push" "$buffer_size"
           printf ", Dash: %s, BG Traffic: %f\n" "$dash" "$load"
 
           for ((i = 0 ; i < 5 ; i++)); do
