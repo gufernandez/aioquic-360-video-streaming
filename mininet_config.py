@@ -87,22 +87,12 @@ def launch(exec_id: str, mininet_bw: float, mininet_delay: str, server_queue: st
 
     # ******************************
     # Rodando cliente do iPerf
-
-    # const_traffic = str(mininet_bw * iperf_const_load) + "M"
-    # print("\n*** Running iPerf client with constant traffic of " + const_traffic + "bps ***")
-    # client.cmd("chmod 755 iperf_client_script.sh")
-    # iperf_params = " ".join([server.IP(), iperf_port, str(iperf_const_duration), const_traffic])
-    # iperf_command = "./iperf_client_script.sh "+iperf_params+" > out/" + out_folder + "/" \
-    #                 + exec_id + "-iperf_client_out.txt &"
-    # print(iperf_command)
-    # client.cmd(iperf_command)
-    # iperf_client_pid = get_last_pid(client)
-    # print("-> iPerf client running on process: ", iperf_client_pid)
-
-    print("\n*** Running iPerf client to generate "+str(iperf_const_load)+" load ***")
-    iperf_params = " ".join(["-ip" + server.IP(), "-port" + iperf_port, "-d" + str(iperf_const_duration),
-                             "-mb" + str(mininet_bw), "-l" + str(iperf_const_load)])
-    iperf_command = "python3 iperf_client_script.py " + iperf_params + " > out/" + out_folder + "/" \
+    traffic1 = str(mininet_bw * iperf_const_load * 2.0) + "M"
+    traffic2 = str(mininet_bw * iperf_const_load * 1.625) + "M"
+    traffic3 = str(mininet_bw * iperf_const_load * 1.0) + "M"
+    print("\n*** Running iPerf client for"+str(iperf_const_load)+" load ***")
+    iperf_params = " ".join([server.IP(), iperf_port, traffic1, traffic2, traffic3])
+    iperf_command = "./iperf_client_script.sh "+iperf_params+" > out/" + out_folder + "/" \
                     + exec_id + "-iperf_client_out.txt &"
     print(iperf_command)
     client.cmd(iperf_command)

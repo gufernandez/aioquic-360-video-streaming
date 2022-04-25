@@ -9,26 +9,20 @@
 
 SERVER_IP="$1"
 IPERF_PORT="$2"
-DURATION="$3"
-TRAFFIC="$4"
-
-# Run IPERF Command
-run_iperf_for () {
-  echo "Generating ${2} bytes of traffic for ${1} seconds"
-  iperf3 -c "$SERVER_IP" -p "$IPERF_PORT" -u -b "$2" -t "$1"
-}
+TRAFFIC1="$3"
+TRAFFIC2="$4"
+TRAFFIC3="$5"
 
 echo "--- Starting iPerf script ---"
-echo "Constant traffic: ${TRAFFIC}Bps"
 is_running=1
 
 # While client is running run the iPerf
 while [ $is_running -eq 1 ]; do
-  # Constant traffic
-  if [ "$TRAFFIC" == "0" ]; then
-    sleep "$DURATION"
-  else
-    run_iperf_for "$DURATION" "$TRAFFIC"
-  fi
+  iperf3 -c "$SERVER_IP" -p "$IPERF_PORT" -u -b "$TRAFFIC1" -t 20
+  sleep 12
+  iperf3 -c "$SERVER_IP" -p "$IPERF_PORT" -u -b "$TRAFFIC2" -t 16
+  sleep 10
+  iperf3 -c "$SERVER_IP" -p "$IPERF_PORT" -u -b "$TRAFFIC3" -t 14
+  sleep 8
 done
 echo "Finished."
