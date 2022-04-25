@@ -15,7 +15,7 @@ from mininet.log import setLogLevel
 class GEANTopo(Topo):
     "GEANT topology for traffic matrix"
 
-    def __init__(self, bw: float, delay: str, buffer_size: int):
+    def __init__(self, bw: float, delay: str):
         # Initialize topology and default options
         Topo.__init__(self)
 
@@ -32,20 +32,20 @@ class GEANTopo(Topo):
         self.addLink(switch_2, host_2)
 
         # add edges between switches
-        self.addLink(switch_1, switch_2, bw=bw, delay=delay, max_queue_size=buffer_size)
+        self.addLink(switch_1, switch_2, bw=bw, delay=delay)
 
 
 topos = {'geant': GEANTopo}
 
 
-def launch(exec_id: str, mininet_bw: float, mininet_delay: str, mininet_buffer: int, server_queue: str, server_push: int, client_dash: str,
+def launch(exec_id: str, mininet_bw: float, mininet_delay: str, server_queue: str, server_push: int, client_dash: str,
            iperf_const_duration: int, iperf_const_load: float, out_folder: str):
     """
     Create and launch the network
     """
     # Create network
     print("*** Creating Network ***\n")
-    topog = GEANTopo(mininet_bw, mininet_delay, mininet_buffer)
+    topog = GEANTopo(mininet_bw, mininet_delay)
     net = Mininet(topo=topog, link=TCLink)
 
     # Run network
@@ -232,12 +232,6 @@ if __name__ == '__main__':
         default="1ms",
         help="The channel delay of the mininet link. Ex: '1ms'"
     )
-    parser.add_argument(
-        "-mbf",
-        "--mn-buffer",
-        type=int,
-        help="The mininet buffer size"
-    )
 
     # Server Parameters
     parser.add_argument(
@@ -297,6 +291,6 @@ if __name__ == '__main__':
     # Tell mininet to print useful information
     setLogLevel('info')
 
-    launch(exec_id=args.id, mininet_bw=args.mn_bandwidth, mininet_delay=args.mn_delay, mininet_buffer=args.mn_buffer,
+    launch(exec_id=args.id, mininet_bw=args.mn_bandwidth, mininet_delay=args.mn_delay,
            server_queue=args.server_queue, server_push=args.server_push, client_dash=args.dash_algorithm,
            iperf_const_duration=args.bg_duration, iperf_const_load=args.bg_traffic, out_folder=args.out_directory)

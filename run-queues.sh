@@ -21,7 +21,6 @@ loads=(0.1 0.3)
 bands=(10.00 8.00) #Mbps
 delays=("5ms" "20ms" "50ms" "100ms")
 queues=("FIFO" "SP" "WFQ")
-mn_buffer=(5 15)
 
 timestamp="date +%s"
 exec_folder=$(eval "$timestamp")
@@ -31,20 +30,18 @@ for load in "${loads[@]}"; do
   for bw in "${bands[@]}"; do
     for delay in "${delays[@]}"; do
       for queue in "${queues[@]}"; do
-        for buffer_size in "${mn_buffer[@]}"; do
-          printf "*** Cenário %d ***\n" "$id"
+        printf "*** Cenário %d ***\n" "$id"
 
-          printf "BW: %f, Delay: %s, Queuing: %s, Push: %d, Buffer Size: %d" "$bw" "$delay" "$queue" "$push" "$buffer_size"
-          printf ", Dash: %s, BG Traffic: %f\n" "$dash" "$load"
+        printf "BW: %f, Delay: %s, Queuing: %s, Push: %d" "$bw" "$delay" "$queue" "$push"
+        printf ", Dash: %s, BG Traffic: %f\n" "$dash" "$load"
 
-          for ((i = 0 ; i < 5 ; i++)); do
-            exec_id="${id}-${i}"
-            python3 mininet_config.py -id "${exec_id}" -mb "${bw}" -md "${delay}" -mbf "${buffer_size}" -sq "${queue}" -sp ${push} -da ${dash} -bd ${bg_d} -bt "${load}" -out "${exec_folder}" > out/"${exec_folder}"/${exec_id}-exec.txt 2>&1
-            rm -rf data/client_files_*
-          done
-
-          ((++id))
+        for ((i = 0 ; i < 5 ; i++)); do
+          exec_id="${id}-${i}"
+          python3 mininet_config.py -id "${exec_id}" -mb "${bw}" -md "${delay}" -mbf "${buffer_size}" -sq "${queue}" -sp ${push} -da ${dash} -bd ${bg_d} -bt "${load}" -out "${exec_folder}" > out/"${exec_folder}"/${exec_id}-exec.txt 2>&1
+          rm -rf data/client_files_*
         done
+
+        ((++id))
       done
     done
   done
