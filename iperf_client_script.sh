@@ -19,7 +19,7 @@ run_iperf_for () {
 }
 
 echo "--- Starting iPerf script ---"
-echo "Constant traffic: ${CONSTANT_TRAFFIC}Bps"
+echo "Constant traffic: ${TRAFFIC}Bps"
 is_running=1
 
 # While client is running run the iPerf
@@ -28,7 +28,7 @@ while [ $is_running -eq 1 ]; do
   if [ "$TRAFFIC" == "0" ]; then
     sleep "$DURATION"
   else
-    run_iperf_for "$CONSTANT_DURATION" "$CONSTANT_TRAFFIC"
+    run_iperf_for "$DURATION" "$TRAFFIC"
   fi
 done
 echo "Finished."
