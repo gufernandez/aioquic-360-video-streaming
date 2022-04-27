@@ -19,7 +19,7 @@ bg_d=80 #sec
 id=1
 loads=(0.1 0.3)
 bands=(10.00 8.00) #Mbps
-delays=("5ms" "20ms" "50ms" "100ms")
+delays=("5ms" "50ms" "75ms" "100ms" "125ms" "150ms")
 queues=("FIFO" "SP" "WFQ")
 
 timestamp="date +%s"

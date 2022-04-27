@@ -4,15 +4,12 @@ import os
 import re
 import time
 
-import mininet.clean
 from mininet.topo import Topo
 from mininet.net import Mininet
 from mininet.link import TCLink
 from mininet.log import setLogLevel
 from mininet.clean import Cleanup
 
-
-# execfile('sflow-rt/extras/sflow.py')
 
 class GEANTopo(Topo):
     "GEANT topology for traffic matrix"
@@ -41,7 +38,7 @@ topos = {'geant': GEANTopo}
 
 
 def launch(exec_id: str, mininet_bw: float, mininet_delay: str, server_queue: str, server_push: int, client_dash: str,
-           iperf_const_duration: int, iperf_const_load: float, out_folder: str):
+           iperf_const_load: float, out_folder: str):
     """
     Create and launch the network
     """

@@ -21,7 +21,7 @@ DATAGRAM_SIZE = 65536  # bits
 
 LOADS = [0.1, 0.3]
 BANDS = [10.00, 8.00]  # Mbps
-DELAYS = ["5ms", "20ms", "50ms", "100ms"]
+DELAYS = ["5ms", "50ms", "75ms", "100ms", "125ms", "150ms"]
 QUEUES = ["FIFO", "SP", "WFQ"]
 
 N_EXECUTION = 5
