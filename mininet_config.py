@@ -4,10 +4,12 @@ import os
 import re
 import time
 
+import mininet.clean
 from mininet.topo import Topo
 from mininet.net import Mininet
 from mininet.link import TCLink
 from mininet.log import setLogLevel
+from mininet.clean import Cleanup
 
 
 # execfile('sflow-rt/extras/sflow.py')
@@ -32,7 +34,7 @@ class GEANTopo(Topo):
         self.addLink(switch_2, host_2)
 
         # add edges between switches
-        self.addLink(switch_1, switch_2, bw=bw, delay=delay, max_queue_size=1000)
+        self.addLink(switch_1, switch_2, bw=bw, delay=delay, max_queue_size=20)
 
 
 topos = {'geant': GEANTopo}
@@ -45,6 +47,7 @@ def launch(exec_id: str, mininet_bw: float, mininet_delay: str, server_queue: st
     """
     # Create network
     print("*** Creating Network ***\n")
+    Cleanup()
     topog = GEANTopo(mininet_bw, mininet_delay)
     net = Mininet(topo=topog, link=TCLink)
 
