@@ -32,7 +32,7 @@ class GEANTopo(Topo):
         self.addLink(switch_2, host_2)
 
         # add edges between switches
-        self.addLink(switch_1, switch_2, bw=bw, delay=delay)
+        self.addLink(switch_1, switch_2, bw=bw, delay=delay, max_queue_size=1000)
 
 
 topos = {'geant': GEANTopo}
