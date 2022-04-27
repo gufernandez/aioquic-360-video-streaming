@@ -38,7 +38,7 @@ topos = {'geant': GEANTopo}
 
 
 def launch(exec_id: str, mininet_bw: float, mininet_delay: str, server_queue: str, server_push: int, client_dash: str,
-           iperf_const_load: float, out_folder: str):
+           iperf_const_duration: int, iperf_const_load: float, out_folder: str):
     """
     Create and launch the network
     """
