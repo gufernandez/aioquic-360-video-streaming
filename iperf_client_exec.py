@@ -22,11 +22,8 @@ def iperf_execution(ip, port, load, bw):
         print(i)
         sleep_time = str(off_values[i])
         run_time = str(on_values[i])
-        print(subprocess.run("ls"))
-        iperf_command = "iperf3 -c " + ip + " -p " + port + " -u -b " + load_traffic + " -t " + run_time
-        print(iperf_command)
-        returned_text = subprocess.getoutput(iperf_command)
-        print(returned_text)
+        iperf_command = "iperf3 -c " + ip + " -p " + port + " -u -b " + load_traffic + " -t " + run_time + " > exit.txt"
+        os.system(iperf_command)
         os.system("sleep " + sleep_time)
 
 
