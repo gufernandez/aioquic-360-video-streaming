@@ -3,7 +3,6 @@ import argparse
 import os
 import random
 import statistics
-import subprocess
 
 RUN_TIMES = 5
 
@@ -20,7 +19,7 @@ def iperf_execution(ip, port, load, bw, out_file):
         sleep_time = str(off_values[i])
         run_time = str(on_values[i])
         iperf_command = "iperf3 -c " + ip + " -p " + port + " -u -b " + load_traffic \
-                        + " -t " + run_time + " > " + out_file
+                        + " -t " + run_time + " >> " + out_file
         os.system(iperf_command)
         os.system("sleep " + sleep_time)
 
