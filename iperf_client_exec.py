@@ -11,9 +11,10 @@ def iperf_execution(ip, port, on_avg, off_avg, load, bw, duration):
     on_values, off_values = get_random_iperf_params(on_avg, off_avg)
     load_traffic = load*bw*duration/on_avg
     load_traffic = str(load_traffic) + "M"
+    print(on_values)
+    print(off_values)
     print(load_traffic)
-
-    print("\n*** Running iPerf client for"+str(load)+" load ***")
+    return
     for i in range(RUN_TIMES):
         sleep_time = str(off_values[i])
         run_time = str(on_values[i])
