@@ -1,8 +1,10 @@
 #!/usr/bin/python
 import argparse
 import os
+import random
 import re
 import time
+import statistics
 
 from mininet.topo import Topo
 from mininet.net import Mininet
@@ -31,14 +33,14 @@ class GEANTopo(Topo):
         self.addLink(switch_2, host_2)
 
         # add edges between switches
-        self.addLink(switch_1, switch_2, bw=bw, delay=delay, max_queue_size=20)
+        self.addLink(switch_1, switch_2, bw=bw, delay=delay, max_queue_size=1000)
 
 
 topos = {'geant': GEANTopo}
 
 
 def launch(exec_id: str, mininet_bw: float, mininet_delay: str, server_queue: str, server_push: int, client_dash: str,
-           iperf_const_duration: int, iperf_const_load: float, out_folder: str):
+           exec_duration: int, load: float, out_folder: str):
     """
     Create and launch the network
     """
@@ -87,12 +89,10 @@ def launch(exec_id: str, mininet_bw: float, mininet_delay: str, server_queue: st
 
     # ******************************
     # Rodando cliente do iPerf
-    traffic1 = str(mininet_bw * iperf_const_load * 2.0) + "M"
-    traffic2 = str(mininet_bw * iperf_const_load * 1.625) + "M"
-    traffic3 = str(mininet_bw * iperf_const_load * 1.0) + "M"
-    print("\n*** Running iPerf client for"+str(iperf_const_load)+" load ***")
-    iperf_params = " ".join([server.IP(), iperf_port, traffic1, traffic2, traffic3])
-    iperf_command = "./iperf_client_script.sh "+iperf_params+" > out/" + out_folder + "/" \
+    print("\n*** Running iPerf client for" + str(load) + " load ***")
+    iperf_params = " ".join([" -ip " + server.IP(), " -p " + iperf_port, " -mb " + str(mininet_bw),
+                             " -d " + str(exec_duration), " -on 60 -off 20", " -l " + str(load)])
+    iperf_command = "python3 iperf_client_exec.py"+iperf_params+" > out/" + out_folder + "/" \
                     + exec_id + "-iperf_client_out.txt &"
     print(iperf_command)
     client.cmd(iperf_command)
@@ -206,6 +206,37 @@ def get_rx_tx(ifconfig):
     return int(rx) * 8, int(tx) * 8
 
 
+def get_random_iperf_params(on_avg, off_avg):
+    def warmup(a, b, size=100000):
+        samples = []
+        for i in range(size):
+            c = random.uniform(a, b)
+            samples.append(c)
+
+        return samples
+
+    # Encontra slices de tamanho slice_size na lista
+    # samples que tem media igual a
+    # média desejada (avg)
+    def trail(a=0, b=2, avg=10, size=1000000, slice_size=5, slice_count=3):
+        random_lists = []
+        samples = warmup(a, b, size)
+        for i in range(int(size / slice_size)):
+            picked = [int(x * avg) for x in samples[slice_size * i:(i + 1) * slice_size]]
+            if (statistics.mean(picked) == avg) and (slice_count > 0):
+                random_lists.append(picked)
+                slice_count -= 1
+        return random_lists
+
+    on_list = trail(avg=on_avg)
+    off_list = trail(avg=off_avg)
+
+    i_on = random.randint(0, len(on_list))
+    i_off = random.randint(0, len(off_list))
+
+    return i_on, i_off
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Mininet configuration and execution script")
 
@@ -261,20 +292,18 @@ if __name__ == '__main__':
         type=str,
         help="dash algorithm (options: basic, basic2) - (defaults to basic)",
     )
-
-    # iPerf Parameters
     parser.add_argument(
-        "-bd",
-        "--bg-duration",
+        "-d",
+        "--exec-duration",
         type=int,
         default=80,
         help="The duration of the background traffic on iPerf in seconds"
     )
     parser.add_argument(
-        "-bt",
-        "--bg-traffic",
+        "-l",
+        "--load",
         type=float,
-        default=0.1,
+        default=0,
         help="The bandwidth consumption by the background traffic on iPerf. Ex: 0.1 = 10%"
     )
     parser.add_argument(
@@ -293,4 +322,4 @@ if __name__ == '__main__':
 
     launch(exec_id=args.id, mininet_bw=args.mn_bandwidth, mininet_delay=args.mn_delay,
            server_queue=args.server_queue, server_push=args.server_push, client_dash=args.dash_algorithm,
-           iperf_const_duration=args.bg_duration, iperf_const_load=args.bg_traffic, out_folder=args.out_directory)
+           exec_duration=args.exec_duration, load=args.load, out_folder=args.out_directory)

@@ -20,9 +20,5 @@ is_running=1
 while [ $is_running -eq 1 ]; do
   iperf3 -c "$SERVER_IP" -p "$IPERF_PORT" -u -b "$TRAFFIC1" -t 20
   sleep 12
-  iperf3 -c "$SERVER_IP" -p "$IPERF_PORT" -u -b "$TRAFFIC2" -t 16
-  sleep 10
-  iperf3 -c "$SERVER_IP" -p "$IPERF_PORT" -u -b "$TRAFFIC3" -t 14
-  sleep 8
 done
 echo "Finished."
