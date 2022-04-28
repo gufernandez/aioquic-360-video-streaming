@@ -3,33 +3,27 @@ import argparse
 import os
 import random
 import statistics
+import subprocess
 
 RUN_TIMES = 5
 
 
-def iperf_execution(ip, port, on_avg, off_avg, load, bw, duration):
+def iperf_execution(ip, port, load, bw):
+    on_avg = 12
+    off_avg = 4
+    duration = 80
     on_values, off_values = get_random_iperf_params(on_avg, off_avg)
     load_traffic = load*bw*duration/on_avg
     load_traffic = str(load_traffic) + "M"
     print(on_values)
     print(off_values)
     print(load_traffic)
-
-    file1 = open('execcs.txt', 'w')
-    L = [on_values, off_values, load_traffic]
-
-    # Writing multiple strings
-    # at a time
-    file1.writelines(L)
-
-    # Closing file
-    file1.close()
-
     for i in range(RUN_TIMES):
         sleep_time = str(off_values[i])
         run_time = str(on_values[i])
         iperf_command = "iperf3 -c " + ip + " -p " + port + " -u -b " + load_traffic + " -t " + run_time
-        os.system(iperf_command)
+        returned_text = subprocess.check_output(iperf_command)
+        print(returned_text)
         os.system("sleep " + sleep_time)
 
 
@@ -93,16 +87,6 @@ if __name__ == '__main__':
         help="The duration of the background traffic on iPerf in seconds"
     )
     parser.add_argument(
-        "-on",
-        type=int,
-        help="The ON time duration"
-    )
-    parser.add_argument(
-        "-off",
-        type=int,
-        help="The OFF time duration"
-    )
-    parser.add_argument(
         "-l",
         "--load",
         type=float,
@@ -117,5 +101,4 @@ if __name__ == '__main__':
     )
     args = parser.parse_args()
 
-    iperf_execution(ip=args.ip, port=args.p, bw=args.mn_bandwidth, duration=args.duration, on_avg=args.on,
-                    off_avg=args.off, load=args.load)
+    iperf_execution(ip=args.ip, port=args.p, bw=args.mn_bandwidth, load=args.load)

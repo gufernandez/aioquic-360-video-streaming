@@ -90,9 +90,8 @@ def launch(exec_id: str, mininet_bw: float, mininet_delay: str, server_queue: st
     # ******************************
     # Rodando cliente do iPerf
     print("\n*** Running iPerf client for " + str(load) + " load ***")
-    iperf_params = " ".join([" -ip " + server.IP(), " -p " + iperf_port, " -mb " + str(mininet_bw),
-                             " -d " + str(exec_duration), " -on 60 -off 20", " -l " + str(load)])
-    iperf_command = "python3 iperf_client_exec.py"+iperf_params+" > out/" + out_folder + "/" \
+    iperf_params = " ".join(["-ip " + server.IP(), "-p " + iperf_port, "-mb " + str(mininet_bw), "-l " + str(load)])
+    iperf_command = "python3 iperf_client_exec.py "+iperf_params+" > out/" + out_folder + "/" \
                     + exec_id + "-iperf_client_out.txt &"
     print(iperf_command)
     client.cmd(iperf_command)
