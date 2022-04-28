@@ -38,7 +38,7 @@ for load in "${loads[@]}"; do
           printf ", Dash: %s, BG Traffic: %f\n" "$dash" "$load"
 
           for ((i = 0 ; i < 5 ; i++)); do
-            printf "Exec %d\n", "$i"
+            printf "Exec %d\n" "$i"
             exec_id="${id}-${i}"
             python3 mininet_config.py -id "${exec_id}" -mb "${bw}" -md "${delay}" -sq "${queue}" -sp ${push} -da ${dash} -d ${bg_d} -l "${load}" -out "${exec_folder}" > out/"${exec_folder}"/${exec_id}-exec.txt 2>&1
             rm -rf data/client_files_*
