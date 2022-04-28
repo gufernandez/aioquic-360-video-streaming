@@ -8,21 +8,19 @@ import subprocess
 RUN_TIMES = 5
 
 
-def iperf_execution(ip, port, load, bw):
+def iperf_execution(ip, port, load, bw, out_file):
     on_avg = 12
     off_avg = 4
     duration = 80
     on_values, off_values = get_random_iperf_params(on_avg, off_avg)
     load_traffic = load*bw*duration/on_avg
     load_traffic = str(load_traffic) + "M"
-    print(on_values)
-    print(off_values)
-    print(load_traffic)
+
     for i in range(RUN_TIMES):
-        print(i)
         sleep_time = str(off_values[i])
         run_time = str(on_values[i])
-        iperf_command = "iperf3 -c " + ip + " -p " + port + " -u -b " + load_traffic + " -t " + run_time + " > exit.txt"
+        iperf_command = "iperf3 -c " + ip + " -p " + port + " -u -b " + load_traffic \
+                        + " -t " + run_time + " > " + out_file
         os.system(iperf_command)
         os.system("sleep " + sleep_time)
 
@@ -94,11 +92,11 @@ if __name__ == '__main__':
         help="The bandwidth consumption by the background traffic on iPerf. Ex: 0.1 = 10%"
     )
     parser.add_argument(
-        "-out",
-        "--out-directory",
+        "-o",
+        "--out-file",
         type=str,
-        help="The folder to store the scripts outputs"
+        help="The file to store the scripts outputs"
     )
     args = parser.parse_args()
 
-    iperf_execution(ip=args.ip, port=args.p, bw=args.mn_bandwidth, load=args.load)
+    iperf_execution(ip=args.ip, port=args.p, bw=args.mn_bandwidth, load=args.load, out_file=args.out_file)
