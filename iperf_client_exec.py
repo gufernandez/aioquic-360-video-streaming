@@ -14,7 +14,17 @@ def iperf_execution(ip, port, on_avg, off_avg, load, bw, duration):
     print(on_values)
     print(off_values)
     print(load_traffic)
-    return
+
+    file1 = open('execcs.txt', 'w')
+    L = [on_values, off_values, load_traffic]
+
+    # Writing multiple strings
+    # at a time
+    file1.writelines(L)
+
+    # Closing file
+    file1.close()
+
     for i in range(RUN_TIMES):
         sleep_time = str(off_values[i])
         run_time = str(on_values[i])
