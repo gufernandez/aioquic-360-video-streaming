@@ -12,6 +12,7 @@
 
 printf "================ Execução de Simulação com alternância nas filas ================\n\n"
 
+START="$1"
 push=1 # Push sempre ativado
 dash="basic" # Bash sempre como basic
 bg_d=80 #sec
@@ -30,16 +31,18 @@ for load in "${loads[@]}"; do
   for bw in "${bands[@]}"; do
     for delay in "${delays[@]}"; do
       for queue in "${queues[@]}"; do
-        printf "*** Cenário %d ***\n" "$id"
+        if [[ $id -ge $START ]]; then
+          printf "*** Cenário %d ***\n" "$id"
 
-        printf "BW: %f, Delay: %s, Queuing: %s, Push: %d" "$bw" "$delay" "$queue" "$push"
-        printf ", Dash: %s, BG Traffic: %f\n" "$dash" "$load"
+          printf "BW: %f, Delay: %s, Queuing: %s, Push: %d" "$bw" "$delay" "$queue" "$push"
+          printf ", Dash: %s, BG Traffic: %f\n" "$dash" "$load"
 
-        for ((i = 0 ; i < 5 ; i++)); do
-          exec_id="${id}-${i}"
-          python3 mininet_config.py -id "${exec_id}" -mb "${bw}" -md "${delay}" -sq "${queue}" -sp ${push} -da ${dash} -bd ${bg_d} -bt "${load}" -out "${exec_folder}" > out/"${exec_folder}"/${exec_id}-exec.txt 2>&1
-          rm -rf data/client_files_*
-        done
+          for ((i = 0 ; i < 5 ; i++)); do
+            exec_id="${id}-${i}"
+            python3 mininet_config.py -id "${exec_id}" -mb "${bw}" -md "${delay}" -sq "${queue}" -sp ${push} -da ${dash} -bd ${bg_d} -bt "${load}" -out "${exec_folder}" > out/"${exec_folder}"/${exec_id}-exec.txt 2>&1
+            rm -rf data/client_files_*
+          done
+        fi
 
         ((++id))
       done
