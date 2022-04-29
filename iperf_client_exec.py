@@ -14,8 +14,8 @@ def iperf_execution(ip, port, load, bw, out_file):
     duration = 80
     on_values, off_values = get_random_iperf_params(on_avg, off_avg)
 
-    os.system(echo_command("ON periods: " + ", ".join(map(str, on_values)), out_file))
-    os.system(echo_command("OFF periods: " + ", ".join(map(str, off_values)), out_file))
+    echo_command("ON periods: " + ", ".join(map(str, on_values)), out_file)
+    echo_command("OFF periods: " + ", ".join(map(str, off_values)), out_file)
 
     load_traffic = load*bw*duration/on_avg
     load_traffic = str(load_traffic) + "M"
@@ -26,9 +26,9 @@ def iperf_execution(ip, port, load, bw, out_file):
 
         iperf_command = "iperf3 -c " + ip + " -p " + port + " -u -b " + load_traffic \
                         + " -t " + run_time + TO_FILE + out_file
-        os.system(echo_command(iperf_command, out_file))
+        echo_command(iperf_command, out_file)
         os.system(iperf_command)
-        os.system(echo_command("Sleeping " + sleep_time + " seconds.", out_file))
+        echo_command("Sleeping " + sleep_time + " seconds.", out_file)
         os.system("sleep " + sleep_time)
 
 
