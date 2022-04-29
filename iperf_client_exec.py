@@ -106,6 +106,6 @@ if __name__ == '__main__':
     echo_command(args.out_file, args.out_file)
     echo_command(args.ip, args.out_file)
     echo_command(args.p, args.out_file)
-    echo_command(args.mn_bandwidth, args.out_file)
-    echo_command(args.load, args.out_file)
+    echo_command(str(args.mn_bandwidth), args.out_file)
+    echo_command(str(args.load), args.out_file)
     iperf_execution(ip=args.ip, port=args.p, bw=args.mn_bandwidth, load=args.load, out_file=args.out_file)
