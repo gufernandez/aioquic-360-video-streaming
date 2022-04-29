@@ -64,7 +64,7 @@ def get_random_iperf_params(on_avg, off_avg):
 
 
 def echo_command(text, out_file):
-    return "echo " + text + TO_FILE + out_file
+    os.system("echo " + text + TO_FILE + out_file)
 
 
 if __name__ == '__main__':
@@ -80,20 +80,12 @@ if __name__ == '__main__':
         type=str,
         help="The iPerf server Port."
     )
-
     parser.add_argument(
         "-mb",
         "--mn-bandwidth",
         type=float,
         default=100.00,
         help="The channel bandwidth (float) of the mininet link in Mbps. Ex: '100.00'"
-    )
-    parser.add_argument(
-        "-d",
-        "--duration",
-        type=int,
-        default=80,
-        help="The duration of the background traffic on iPerf in seconds"
     )
     parser.add_argument(
         "-l",
@@ -109,6 +101,11 @@ if __name__ == '__main__':
         help="The file to store the scripts outputs"
     )
     args = parser.parse_args()
-    params = ", ".join([args.ip, args.p, args.mn_bandwidth, args.load, args.out_file])
-    os.system(echo_command("STARTING IPERF CLIENT with params: " + params, args.out_file))
+
+    echo_command("STARTING IPERF CLIENT with params", args.out_file)
+    echo_command(args.out_file, args.out_file)
+    echo_command(args.ip, args.out_file)
+    echo_command(args.p, args.out_file)
+    echo_command(args.mn_bandwidth, args.out_file)
+    echo_command(args.load, args.out_file)
     iperf_execution(ip=args.ip, port=args.p, bw=args.mn_bandwidth, load=args.load, out_file=args.out_file)
