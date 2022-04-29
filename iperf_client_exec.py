@@ -9,9 +9,9 @@ TO_FILE = " >> "
 
 
 def iperf_execution(ip, port, load, bw, out_file):
-    on_avg = 12
+    on_avg = 8
     off_avg = 4
-    duration = 80
+    duration = 60
     on_values, off_values = get_random_iperf_params(on_avg, off_avg)
 
     echo_command("ON periods: " + ", ".join(map(str, on_values)), out_file)
