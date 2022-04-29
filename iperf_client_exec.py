@@ -13,6 +13,10 @@ def iperf_execution(ip, port, load, bw, out_file):
     off_avg = 4
     duration = 80
     on_values, off_values = get_random_iperf_params(on_avg, off_avg)
+
+    os.system(echo_command("ON periods: " + ", ".join(map(str, on_values)), out_file))
+    os.system(echo_command("OFF periods: " + ", ".join(map(str, off_values)), out_file))
+
     load_traffic = load*bw*duration/on_avg
     load_traffic = str(load_traffic) + "M"
 
@@ -105,5 +109,6 @@ if __name__ == '__main__':
         help="The file to store the scripts outputs"
     )
     args = parser.parse_args()
-
+    params = ", ".join([args.ip, args.p, args.mn_bandwidth, args.load, args.out_file])
+    os.system(echo_command("STARTING IPERF CLIENT with params: " + params, args.out_file))
     iperf_execution(ip=args.ip, port=args.p, bw=args.mn_bandwidth, load=args.load, out_file=args.out_file)
