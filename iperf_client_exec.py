@@ -5,8 +5,7 @@ import random
 import statistics
 
 RUN_TIMES = 5
-NEW_FILE = " > "
-EXISTING_FILE = " >> "
+TO_FILE = " >> "
 
 
 def iperf_execution(ip, port, load, bw, out_file):
@@ -21,14 +20,11 @@ def iperf_execution(ip, port, load, bw, out_file):
         sleep_time = str(off_values[i])
         run_time = str(on_values[i])
 
-        if i == 0:
-            file_op = NEW_FILE
-        else:
-            file_op = EXISTING_FILE
-
         iperf_command = "iperf3 -c " + ip + " -p " + port + " -u -b " + load_traffic \
-                        + " -t " + run_time + file_op + out_file
+                        + " -t " + run_time + TO_FILE + out_file
+        os.system(echo_command(iperf_command, out_file))
         os.system(iperf_command)
+        os.system(echo_command("Sleeping " + sleep_time + " seconds.", out_file))
         os.system("sleep " + sleep_time)
 
 
@@ -61,6 +57,10 @@ def get_random_iperf_params(on_avg, off_avg):
     i_off = random.randint(0, len(off_list))
 
     return on_list[i_on], off_list[i_off]
+
+
+def echo_command(text, out_file):
+    return "echo " + text + TO_FILE + out_file
 
 
 if __name__ == '__main__':
