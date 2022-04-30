@@ -16,7 +16,7 @@ def iperf_execution(ip, port, load, bw, out_file):
     echo_command("STARTING IPERF CLIENT", args.out_file)
 
     on_values, off_values = get_random_iperf_params(on_avg, off_avg)
-
+    echo_command("RESULT", out_file)
     echo_command("ON periods: " + ", ".join(map(str, on_values)), out_file)
     echo_command("OFF periods: " + ", ".join(map(str, off_values)), out_file)
 
@@ -59,13 +59,17 @@ def get_random_iperf_params(on_avg, off_avg):
 
     echo_command("Get ON trail", args.out_file)
     on_list = trail(avg=on_avg)
+    echo_command("ON trail: " + ", ".join(map(str, on_list)), args.out_file)
     echo_command("Get OFF trail", args.out_file)
     off_list = trail(avg=off_avg)
+    echo_command("OFF trail: " + ", ".join(map(str, off_list)), args.out_file)
 
     echo_command("Get random on", args.out_file)
     i_on = random.randint(0, len(on_list))
+    echo_command(str(i_on), args.out_file)
     echo_command("Get random off", args.out_file)
     i_off = random.randint(0, len(off_list))
+    echo_command(str(i_off), args.out_file)
 
     return on_list[i_on], off_list[i_off]
 
