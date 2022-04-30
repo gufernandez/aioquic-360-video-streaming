@@ -24,7 +24,9 @@ def iperf_execution(ip, port, load, bw, out_file):
 
         iperf_command = "iperf3 -c " + ip + " -p " + port + " -u -b " + load_traffic \
                         + " -t " + run_time + TO_FILE + out_file
+        echo_command(iperf_command, out_file)
         os.system(iperf_command)
+        echo_command("Sleeping " + sleep_time + " seconds.", out_file)
         os.system("sleep " + sleep_time)
 
 
