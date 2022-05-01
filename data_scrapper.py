@@ -15,7 +15,8 @@ LINK_PATTERNS = [START_CHANNEL_PATTERN, TRAFFIC_PATTERN, LINK_WIDTH_PATTERN, CHA
 IPERF_START_PATTERN = r'(Total Datagrams)'
 DATAGRAM_PATTERN = r'(\d+)  $'
 IPERF_END_PATTERN = r'iperf Done.'
-IPERF_PATTERNS = [IPERF_START_PATTERN, DATAGRAM_PATTERN]
+IPERF_SLEEP = r'Sleeping (\d+) seconds.'
+IPERF_PATTERNS = [IPERF_START_PATTERN, DATAGRAM_PATTERN, IPERF_SLEEP]
 
 DATAGRAM_SIZE = 65536  # bits
 
@@ -49,13 +50,13 @@ def print_row():
 
 
 if __name__ == '__main__':
-    args_dir = "29-04-22"
+    args_dir = "30-04"
     user_dir = "./out/" + str(args_dir) + "/"
 
     print("id; load_per; channel_bandwidth; delay_ms; queue; rebuffer_count; rebuffer_s; miss_ratio_all_per; "
           "miss_ratio_pov_per; bitrate_avg; total_channel_usage_per; app_channel_usage_per; iperf_channel_usage_per")
 
-    for cenario_id in range(1, 49):
+    for cenario_id in range(1, 73):
         rebuffering_count = []
         rebuffered_secs = []
         missing_ratio_total = []
@@ -137,7 +138,7 @@ if __name__ == '__main__':
                     if state == 1:
                         end = re.findall(IPERF_END_PATTERN, line)
                         if end:
-                            state = 0
+                            state = 2
                             continue
 
                     result = re.findall(IPERF_PATTERNS[state], line)
@@ -148,6 +149,9 @@ if __name__ == '__main__':
                         elif state == 1:
                             iperf_datagrams += int(result[0])
                             iperf_seconds += 1
+                        elif state == 2:
+                            iperf_seconds += int(result[0])
+                            state = 0
 
                 iperf_throughput = iperf_datagrams * DATAGRAM_SIZE / iperf_seconds
                 iperf_usage.append(iperf_throughput / (1048576 * channel_bw))

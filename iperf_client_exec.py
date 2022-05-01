@@ -15,7 +15,7 @@ def iperf_execution(ip, port, load, bw, out_file):
 
     on_values, off_values = get_random_iperf_params(on_avg, off_avg)
 
-    load_traffic = load*bw*duration/on_avg
+    load_traffic = load*bw*duration/(on_avg*5)
     load_traffic = str(load_traffic) + "M"
 
     for i in range(RUN_TIMES):
