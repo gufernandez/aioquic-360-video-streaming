@@ -9,14 +9,18 @@ TO_FILE = " >> "
 
 
 def iperf_execution(ip, port, load, bw, out_file):
+    on_avg = 8
+    off_avg = 4
     duration = 60
 
-    time_values = get_random_iperf_params(bw, duration, load)
+    on_values, off_values = get_random_iperf_params(on_avg, off_avg)
 
-    for run_time, sleep_time, traffic in time_values:
-        sleep_time = str(sleep_time)
-        run_time = str(run_time)
-        load_traffic = str(traffic) + "M"
+    load_traffic = load*bw*duration/(on_avg*5)
+    load_traffic = str(load_traffic) + "M"
+
+    for i in range(RUN_TIMES):
+        sleep_time = str(off_values[i])
+        run_time = str(on_values[i])
 
         iperf_command = "iperf3 -c " + ip + " -p " + port + " -u -b " + load_traffic \
                         + " -t " + run_time + TO_FILE + out_file
@@ -26,10 +30,8 @@ def iperf_execution(ip, port, load, bw, out_file):
         os.system("sleep " + sleep_time)
 
 
-def get_random_iperf_params(C, T, lbda):
-    # sorteia size numeros entre a e b, retornando a
-    # lista de numeros
-    def warmup(a, b, size=1000000):
+def get_random_iperf_params(on_avg, off_avg):
+    def warmup(a, b, size=100000):
         samples = []
         for i in range(size):
             c = random.uniform(a, b)
@@ -40,36 +42,23 @@ def get_random_iperf_params(C, T, lbda):
     # Encontra slices de tamanho slice_size na lista
     # samples que tem media igual a
     # média desejada (avg)
-    def trail(a=0, b=2, t_avg=10, t_avg_on=4, periodo_ativo=5, taxa_media=3.0, samples_count=5, BW=10):
-        size = 1000000
+    def trail(a=0, b=2, avg=10, size=1000000, slice_size=RUN_TIMES, slice_count=3):
+        random_lists = []
         samples = warmup(a, b, size)
+        for i in range(int(size / slice_size)):
+            picked = [int(x * avg) for x in samples[slice_size * i:(i + 1) * slice_size]]
+            if (statistics.mean(picked) == avg) and (slice_count > 0):
+                random_lists.append(picked)
+                slice_count -= 1
+        return random_lists
 
-        time_list = []
-        for i in range(int(size)):
-            if samples_count > 0:
-                picked = [int(x) for x in samples[i:(i + periodo_ativo)]]
-                if statistics.mean(picked) == t_avg_on:
-                    par_on_off = []
-                    total = 0
-                    for x in picked:
-                        rate = min(round((float(t_avg) / float(x)) * taxa_media, 2), round(float(BW), 2))
-                        par_on_off.append((x, t_avg - x, rate))
-                        thelatter = par_on_off[len(par_on_off) - 1]
-                        total += thelatter[0] * thelatter[2]
-                    time_list.append(par_on_off)
-                    samples_count -= 1
-        return time_list
+    on_list = trail(avg=on_avg)
+    off_list = trail(avg=off_avg)
 
-    N = 10  # numeros de vezes que a fonte ficara ativa
-    R = C * lbda  # taxa media de bits qdo a fonte fica ativa
+    i_on = random.randint(0, len(on_list)-1)
+    i_off = random.randint(0, len(off_list)-1)
 
-    t_avg = int((C * T * lbda) / (N * R))
-    t_avg_on = max(round((2.0 * t_avg) / 3.0), round(C / R))
-
-    periods = trail(a=round(C / R), b=t_avg, t_avg=t_avg, t_avg_on=t_avg_on, periodo_ativo=N, taxa_media=R, BW=C)
-
-    i = random.randint(0, len(periods)-1)
-    return periods[i]
+    return on_list[i_on], off_list[i_off]
 
 
 def echo_command(text, out_file):
