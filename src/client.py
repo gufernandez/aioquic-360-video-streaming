@@ -21,6 +21,8 @@ Client_Log = False
 received_files = [[False for x in range(N_SEGMENTS)] for y in range(MAX_TILE)]
 waiting_for_buffer = True
 downloaded_time = 0
+# 1: Sequencial, 2: Alternado
+REQUEST_MODE = 2
 
 
 async def aioquic_client(ca_cert: str, connection_host: str, connection_port: int, dash_algorithm: Dash):
@@ -133,17 +135,52 @@ async def handle_stream(hp_reader, hp_writer, lp_reader, lp_writer, dash):
 
                 print("Client requesting segment: ", video_segment)
 
-                for tile in range(1, MAX_TILE):
-                    if not received_files[tile-1][video_segment-1]:
-                        if tile in fov:
-                            priority = HIGH_PRIORITY
-                            writer_to_send = hp_writer
-                        else:
-                            priority = LOW_PRIORITY
-                            writer_to_send = lp_writer
+                all_tiles = list(range(1, MAX_TILE))
 
-                        message = VideoPacket(video_segment, tile, priority, current_bitrate)
-                        await send_data(writer_to_send, stream_id=client_id, end_stream=False, packet=message)
+                if REQUEST_MODE == 1:
+                    # Request Ordenado
+                    for tile in all_tiles:
+                        if not received_files[tile-1][video_segment-1]:
+                            if tile in fov:
+                                priority = HIGH_PRIORITY
+                                writer_to_send = hp_writer
+                            else:
+                                priority = LOW_PRIORITY
+                                writer_to_send = lp_writer
+
+                            message = VideoPacket(video_segment, tile, priority, current_bitrate)
+                            await send_data(writer_to_send, stream_id=client_id, end_stream=False, packet=message)
+                else:
+                    # Request alternado
+                    out_fov = list(set(all_tiles) - set(fov))
+                    running = True
+                    get_state = 0
+                    while running:
+                        if get_state < 2:
+                            tile = out_fov[0]
+                            del out_fov[0]
+
+                        if not received_files[tile-1][video_segment-1]:
+                            if get_state == 2: # FOV
+                                priority = HIGH_PRIORITY
+                                writer_to_send = hp_writer
+                            else: # OUT FOV
+                                priority = LOW_PRIORITY
+                                writer_to_send = lp_writer
+
+                            message = VideoPacket(video_segment, tile, priority, current_bitrate)
+                            await send_data(writer_to_send, stream_id=client_id, end_stream=False, packet=message)
+
+                        get_state += 1
+                        if len(out_fov) == 0 & len(fov) == 0:
+                            running = False
+                        elif len(fov) == 0 & get_state == 2:
+                            get_state = 0
+                        elif len(out_fov) == 0 & get_state < 2:
+                            get_state = 2
+                        else:
+                            get_state += 1
+
                 frame_request += VIDEO_FPS
 
                 await asyncio.sleep(0.005)

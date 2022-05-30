@@ -37,7 +37,7 @@ class WeightedFairQueue(Queue):
         self.last_time = 0
         self.last_VT = 0
 
-    def _put (self, item, heappush=heapq.heappush):
+    def _put(self, item, heappush=heapq.heappush):
         priority = item[0]-1
         length = item[1]
         content = item[2]

@@ -13,7 +13,11 @@ def iperf_execution(ip, port, load, bw, out_file):
     off_avg = 4
     duration = 60
 
-    on_values, off_values = get_random_iperf_params(on_avg, off_avg)
+    # Roda sempre com esses valores
+    on_values, off_values = ([13, 9, 0, 15, 3], [3, 1, 5, 6, 5])
+
+    # Cada execução possui valores diferentes
+    # on_values, off_values = get_random_iperf_params(on_avg, off_avg)
 
     load_traffic = load*bw*duration/(on_avg*5)
     load_traffic = str(load_traffic) + "M"
