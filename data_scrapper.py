@@ -41,12 +41,13 @@ def get_att_id(cen_id, mod, div):
 
 
 def print_row():
-    row = "; ".join([str(cenario_id), str(LOADS[loads_id]), str(BANDS[bands_id]), DELAYS[delay_id], QUEUES[queue_id],
-                     str(rebuffering_count_mean), str(rebuffered_secs_mean), str(missing_ratio_total_mean),
-                     str(missing_ratio_pov_mean), str(bitrate_avg_mean), str(total_channel_usage_mean),
-                     str(application_channel_usage_mean), str(iperf_usage_mean)])
-    row = row.replace('.', ',')
-    print(row)
+    for i in range(N_EXECUTION):
+        row = "; ".join([str(cenario_id), str(LOADS[loads_id]), str(BANDS[bands_id]), DELAYS[delay_id], QUEUES[queue_id],
+                         str(rebuffering_count[i]), str(rebuffered_secs[i]), str(missing_ratio_total[i]),
+                         str(missing_ratio_pov[i]), str(bitrate_avg[i]), str(total_channel_usage[i]),
+                         str(application_channel_usage[i]), str(iperf_usage[i])])
+        row = row.replace('.', ',')
+        print(row)
 
 
 if __name__ == '__main__':
@@ -159,14 +160,15 @@ if __name__ == '__main__':
         for i in range(N_EXECUTION):
             application_channel_usage.append(total_channel_usage[i] - iperf_usage[i])
 
-        rebuffering_count_mean = mean(rebuffering_count)
-        rebuffered_secs_mean = mean(rebuffered_secs)
-        missing_ratio_total_mean = mean_percentage(missing_ratio_total)
-        missing_ratio_pov_mean = mean_percentage(missing_ratio_pov)
-        bitrate_avg_mean = mean(bitrate_avg)
-        iperf_usage_mean = mean(iperf_usage)
-        total_channel_usage_mean = mean(total_channel_usage)
-        application_channel_usage_mean = mean(application_channel_usage)
+        # Realizar média aqui mesmo
+        # rebuffering_count_mean = mean(rebuffering_count)
+        # rebuffered_secs_mean = mean(rebuffered_secs)
+        # missing_ratio_total_mean = mean_percentage(missing_ratio_total)
+        # missing_ratio_pov_mean = mean_percentage(missing_ratio_pov)
+        # bitrate_avg_mean = mean(bitrate_avg)
+        # iperf_usage_mean = mean(iperf_usage)
+        # total_channel_usage_mean = mean(total_channel_usage)
+        # application_channel_usage_mean = mean(application_channel_usage)
 
         mod = len(QUEUES)
         div = 1

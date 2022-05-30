@@ -23,6 +23,8 @@ waiting_for_buffer = True
 downloaded_time = 0
 # 1: Sequencial, 2: Alternado
 REQUEST_MODE = 2
+# A cada 2 fora do FOV, 1 do FOV é enviado
+FOV_RATIO = 2
 
 
 async def aioquic_client(ca_cert: str, connection_host: str, connection_port: int, dash_algorithm: Dash):
@@ -156,12 +158,15 @@ async def handle_stream(hp_reader, hp_writer, lp_reader, lp_writer, dash):
                     running = True
                     get_state = 0
                     while running:
-                        if get_state < 2:
+                        if get_state < FOV_RATIO:
                             tile = out_fov[0]
                             del out_fov[0]
+                        elif get_state == FOV_RATIO:
+                            tile = fov[0]
+                            del fov[0]
 
                         if not received_files[tile-1][video_segment-1]:
-                            if get_state == 2: # FOV
+                            if get_state == FOV_RATIO: # FOV
                                 priority = HIGH_PRIORITY
                                 writer_to_send = hp_writer
                             else: # OUT FOV
@@ -172,14 +177,15 @@ async def handle_stream(hp_reader, hp_writer, lp_reader, lp_writer, dash):
                             await send_data(writer_to_send, stream_id=client_id, end_stream=False, packet=message)
 
                         get_state += 1
-                        if len(out_fov) == 0 & len(fov) == 0:
-                            running = False
-                        elif len(fov) == 0 & get_state == 2:
+                        if get_state > FOV_RATIO:
                             get_state = 0
-                        elif len(out_fov) == 0 & get_state < 2:
-                            get_state = 2
-                        else:
-                            get_state += 1
+
+                        if len(out_fov) == 0 and len(fov) == 0:
+                            running = False
+                        elif len(fov) == 0 and get_state == FOV_RATIO:
+                            get_state = 0
+                        elif len(out_fov) == 0 and get_state < FOV_RATIO:
+                            get_state = FOV_RATIO
 
                 frame_request += VIDEO_FPS
 
