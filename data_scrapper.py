@@ -51,7 +51,7 @@ def print_row():
 
 
 if __name__ == '__main__':
-    args_dir = "30-04"
+    args_dir = "05-29"
     user_dir = "./out/" + str(args_dir) + "/"
 
     print("id; load_per; channel_bandwidth; delay_ms; queue; rebuffer_count; rebuffer_s; miss_ratio_all_per; "

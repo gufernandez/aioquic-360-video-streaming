@@ -22,7 +22,7 @@ received_files = [[False for x in range(N_SEGMENTS)] for y in range(MAX_TILE)]
 waiting_for_buffer = True
 downloaded_time = 0
 # 1: Sequencial, 2: Alternado
-REQUEST_MODE = 2
+REQUEST_MODE = 1
 # A cada 2 fora do FOV, 1 do FOV é enviado
 FOV_RATIO = 2
 
