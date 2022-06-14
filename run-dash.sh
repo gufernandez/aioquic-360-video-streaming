@@ -1,6 +1,5 @@
 #!/bin/bash
 
-
 # -mb > --mn-bandwidth: Bandwidth of mininet link
 # -md > --mn-delay: Delay of mininet link
 # -sq > --server-queue: Queuing on video Server
@@ -11,24 +10,44 @@
 # -pd > --peek-duration: Duration of iperf peek traffic (repeated)
 # -pt > --peek-traffic: Bandwidth of iperf peek traffic
 
-printf "================ SIMULATION EXECUTION ================\n\n"
+printf "================ Execução de Simulação com alternância nos algoritmos dash ================\n\n"
 
-printf "*** First Set ***\n"
-
-# Podemos criar um loop aqui
+START="$1"
+push=1 # Push sempre ativado
+bg_d=80 #sec
+queue="WFQ" # Queue sempre WFQ
 
 id=1
-bw=100.00
-delay="1ms"
-queue="WFQ"
-push=1
-dash="basic"
-bg_d=30
-bg_t="5M"
-peek_d=20
-peek_t="80M"
-printf "Execução %d. BW: %f, Delay: %s, Queuing: %s, Push: %d" "$id" "$bw" "$delay" "$queue" "$push"
-printf ", Dash: %s, BG Duration: %d, BG Traffic: %s" "$dash" "$bg_d" "$bg_t"
-printf ", Peek Duration: %d, Peek Traffic: %s\n" "$peek_d" "$peek_t"
+loads=(0.1 0.3)
+bands=(10.00 8.00) #Mbps
+delays=("5ms" "50ms" "75ms" "100ms" "125ms" "150ms")
+dashes=("basic" "basic2")
 
-python3 mininet_config.py -id ${id} -mb ${bw} -md ${delay} -sq ${queue} -sp ${push} -da ${dash} -bd ${bg_d} -bt ${bg_t} -pd ${peek_d} -pt ${peek_t} > out/${id}-exec.txt 2>&1
+timestamp="date +%s"
+exec_folder=$(eval "$timestamp")
+mkdir out/"${exec_folder}"
+
+for load in "${loads[@]}"; do
+  for bw in "${bands[@]}"; do
+    for delay in "${delays[@]}"; do
+      for dash in "${dashes[@]}"; do
+        if [[ $id -ge $START ]]; then
+          printf "*** Cenário %d ***\n" "$id"
+
+          printf "BW: %f, Delay: %s, Queuing: %s, Push: %d" "$bw" "$delay" "$queue" "$push"
+          printf ", Dash: %s, BG Traffic: %f\n" "$dash" "$load"
+
+          for ((i = 0 ; i < 5 ; i++)); do
+            printf "Exec %d\n" "$i"
+            date
+            exec_id="${id}-${i}"
+            python3 mininet_config.py -id "${exec_id}" -mb "${bw}" -md "${delay}" -sq "${queue}" -sp ${push} -da ${dash} -d ${bg_d} -l "${load}" -out "${exec_folder}" > out/"${exec_folder}"/${exec_id}-exec.txt 2>&1
+            rm -rf data/client_files_*
+          done
+        fi
+
+        ((++id))
+      done
+    done
+  done
+done
