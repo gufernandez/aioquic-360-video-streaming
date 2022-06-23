@@ -42,6 +42,7 @@ def get_att_id(cen_id, mod, div):
 
 def print_row():
     for i in range(N_EXECUTION):
+        print("EXECUCAO "+str(i))
         row = "; ".join([str(cenario_id), str(LOADS[loads_id]), str(BANDS[bands_id]), DELAYS[delay_id], QUEUES[queue_id],
                          str(rebuffering_count[i]), str(rebuffered_secs[i]), str(missing_ratio_total[i]),
                          str(missing_ratio_pov[i]), str(bitrate_avg[i]), str(total_channel_usage[i]),
@@ -51,7 +52,7 @@ def print_row():
 
 
 if __name__ == '__main__':
-    args_dir = "05-29"
+    args_dir = "06-21"
     user_dir = "./out/" + str(args_dir) + "/"
 
     print("id; load_per; channel_bandwidth; delay_ms; queue; rebuffer_count; rebuffer_s; miss_ratio_all_per; "
@@ -108,6 +109,11 @@ if __name__ == '__main__':
                     else:
                         state += 1
 
+            if len(missing_ratio_total) <= i or len(rebuffering_count) <= i or len(rebuffered_secs) <= i or \
+                    len(missing_ratio_pov) <= i or len(bitrate_avg) <= i:
+                print("Error with file: " + file_name)
+                break
+
             # EXEC FILE: Channel Usage
             file_name = user_dir + '-'.join([str(cenario_id), str(i), "exec.txt"])
             with open(file_name) as f:
@@ -126,6 +132,10 @@ if __name__ == '__main__':
                             total_channel_usage.append(float(result[0]))
                             break
                         state += 1
+
+            if len(total_channel_traffic) <= i or len(total_channel_usage) <= i:
+                print("Error with file: " + file_name)
+                break
 
             # IPERF FILE: Channel Usage by Iperf
             file_name = user_dir + '-'.join([str(cenario_id), str(i), "iperf_client_out.txt"])
@@ -156,6 +166,10 @@ if __name__ == '__main__':
 
                 iperf_throughput = iperf_datagrams * DATAGRAM_SIZE / iperf_seconds
                 iperf_usage.append(iperf_throughput / (1048576 * channel_bw))
+
+            if len(iperf_usage) <= i:
+                print("Error with file: " + file_name)
+                break
 
         for i in range(N_EXECUTION):
             application_channel_usage.append(total_channel_usage[i] - iperf_usage[i])
